@@ -5,6 +5,8 @@ These rules are binding for any assistant or contributor working in this repo.
 
 ## Code style
 
+- A linter and Prettier are mandatory tooling: the project must have them installed and configured (ESLint with the Next.js preset unless decided otherwise), with the linter enforcing the style rules below. Both must pass cleanly; run them before finishing any task.
+- A husky + lint-staged pre-commit hook must be set up (husky activated by the `prepare` script on `npm install`): it runs the linter and Prettier over the staged files and blocks the commit on errors (Prettier auto-formats and re-stages). Never bypass it with `--no-verify`; fix the reported problems instead.
 - Prefer arrow functions over `function` declarations everywhere — components, hooks, handlers, utilities: `const UserCard = () => { ... }`.
 - Prefer `const` over `let` wherever the binding is never reassigned; `var` is forbidden.
 - Export through named `const` exports; avoid default exports and imports, except where Next.js requires a default (`page.tsx`, `layout.tsx`, other framework conventions and config files).
