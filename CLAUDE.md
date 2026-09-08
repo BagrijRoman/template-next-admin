@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # Admin Web Template — Engineering Guidelines
 
 Next.js admin panel starter template (React, Tailwind CSS, React Query, Zustand).
