@@ -1,9 +1,7 @@
-const Home = () => {
-  return (
-    <main className="flex flex-1 items-center justify-center">
-      <h1 className="text-2xl font-semibold">Admin Web Template</h1>
-    </main>
-  );
-};
+import { redirect } from 'next/navigation';
+import { ROUTES } from '@/lib/constants';
+
+// proxy.ts normally handles "/" before this renders; kept as a fallback.
+const Home = () => redirect(ROUTES.DASHBOARD);
 
 export default Home;
