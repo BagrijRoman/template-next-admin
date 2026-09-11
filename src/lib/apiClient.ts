@@ -35,29 +35,54 @@ export const onUnauthorized = (handler: UnauthorizedHandler) => {
   return () => unauthorizedHandlers.delete(handler);
 };
 
+// Cross-tab mutex name for the Web Locks API; the lock is origin-scoped and browser-managed,
+// so it survives (auto-releases on) tab crashes — unlike hand-rolled localStorage flags.
+const REFRESH_LOCK = 'auth-refresh';
+
+const performRefresh = async (): Promise<boolean> => {
+  const refreshToken = tokenStorage.getRefreshToken();
+  if (!refreshToken) {
+    return false;
+  }
+  const response = await fetch(`${API_URL}${AUTH_ENDPOINTS.REFRESH}`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ refreshToken }),
+  });
+  if (!response.ok) {
+    return false;
+  }
+  tokenStorage.setTokens((await response.json()) as AuthResponse);
+  return true;
+};
+
+/**
+ * Refresh tokens are single-use on the backend (a second redemption reads as theft and revokes
+ * the whole session family), so two tabs must never refresh with the same token. The lock
+ * serializes tabs; the re-check inside makes the waiting tab a no-op — the winner's fresh pair
+ * is already in the shared cookies.
+ */
+const refreshExclusively = async (staleRefreshToken: string): Promise<boolean> =>
+  await navigator.locks.request(REFRESH_LOCK, async () => {
+    const currentRefreshToken = tokenStorage.getRefreshToken();
+    if (currentRefreshToken && currentRefreshToken !== staleRefreshToken) {
+      return true;
+    }
+    return performRefresh();
+  });
+
 let refreshPromise: Promise<boolean> | null = null;
 
-/** Single in-flight refresh shared by every concurrent 401 request. */
+/** Single in-flight refresh per tab (and, via the Web Lock, per browser). */
 const refreshSession = (): Promise<boolean> => {
   if (!refreshPromise) {
-    refreshPromise = (async () => {
-      const refreshToken = tokenStorage.getRefreshToken();
-      if (!refreshToken) {
-        return false;
-      }
-      const response = await fetch(`${API_URL}${AUTH_ENDPOINTS.REFRESH}`, {
-        method: 'POST',
-        headers: JSON_HEADERS,
-        body: JSON.stringify({ refreshToken }),
-      });
-      if (!response.ok) {
-        return false;
-      }
-      tokenStorage.setTokens((await response.json()) as AuthResponse);
-      return true;
-    })().finally(() => {
-      refreshPromise = null;
-    });
+    const staleRefreshToken = tokenStorage.getRefreshToken();
+    const canLock = typeof navigator !== 'undefined' && 'locks' in navigator;
+    refreshPromise = (canLock && staleRefreshToken ? refreshExclusively(staleRefreshToken) : performRefresh()).finally(
+      () => {
+        refreshPromise = null;
+      },
+    );
   }
   return refreshPromise;
 };

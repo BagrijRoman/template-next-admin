@@ -4,28 +4,28 @@ Atomic feature breakdown for project estimation, one estimable unit per row — 
 
 ## Implemented
 
-| #   | Feature                                 | Notes                                                                                                                                          |
-| --- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Web App: Project scaffolding            | Next.js 16, React 19, strict TypeScript, Tailwind CSS 4; dev/prod on port 3001                                                                 |
-| 2   | Web App: Code quality tooling           | ESLint (Next preset) + Prettier + husky/lint-staged pre-commit hook; typecheck script                                                          |
-| 3   | Web App: Engineering guidelines         | CLAUDE.md: code style, constants, routing & auth rules                                                                                         |
-| 4   | Web App: Routing skeleton               | Route groups (auth)/(app) with separate layouts; ROUTES constants (no hard-coded paths); / redirects to /dashboard; not-found page             |
-| 5   | Web App: App shell layout               | Sidebar + Header for the (app) group; centered card layout for (auth)                                                                          |
-| 6   | Web App: Auth: Login page               | LoginForm against POST /auth/sign-in, error display, redirect to a validated next path                                                         |
-| 7   | Web App: Auth: Token storage            | Both JWTs in cookies whose lifetime mirrors each token's exp — backend TTLs stay the single source of truth                                    |
-| 8   | Web App: Auth: API client               | Bearer header, single shared refresh on 401, one retry, session cleanup + onUnauthorized on a second 401; skipAuth for token-issuing endpoints |
-| 9   | Web App: Auth: Route guard chain        | proxy.ts (middleware) optimistic cookie-presence redirects + AuthGuard validating via GET /users/me                                            |
-| 10  | Web App: Auth: State store              | Zustand useAuthStore, selector-only reads                                                                                                      |
-| 11  | Web App: Auth: Open-redirect protection | next query param validated to same-origin absolute paths (getSafeNextPath)                                                                     |
-| 12  | Web App: Env configuration              | .env.example / .env.local with API_URL                                                                                                         |
-| 13  | Web App: Feature worklog                | This document; every portion updates it in the same commit (rule in CLAUDE.md)                                                                 |
+| #   | Feature                                 | Notes                                                                                                                                                                          |
+| --- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Web App: Project scaffolding            | Next.js 16, React 19, strict TypeScript, Tailwind CSS 4; dev/prod on port 3001                                                                                                 |
+| 2   | Web App: Code quality tooling           | ESLint (Next preset) + Prettier + husky/lint-staged pre-commit hook; typecheck script                                                                                          |
+| 3   | Web App: Engineering guidelines         | CLAUDE.md: code style, constants, routing & auth rules                                                                                                                         |
+| 4   | Web App: Routing skeleton               | Route groups (auth)/(app) with separate layouts; ROUTES constants (no hard-coded paths); / redirects to /dashboard; not-found page                                             |
+| 5   | Web App: App shell layout               | Sidebar + Header for the (app) group; centered card layout for (auth)                                                                                                          |
+| 6   | Web App: Auth: Login page               | LoginForm against POST /auth/sign-in, error display, redirect to a validated next path                                                                                         |
+| 7   | Web App: Auth: Token storage            | Both JWTs in cookies whose lifetime mirrors each token's exp — backend TTLs stay the single source of truth                                                                    |
+| 8   | Web App: Auth: API client               | Bearer header, single shared refresh on 401, one retry, session cleanup + onUnauthorized on a second 401; skipAuth for token-issuing endpoints                                 |
+| 9   | Web App: Auth: Route guard chain        | proxy.ts (middleware) optimistic cookie-presence redirects + AuthGuard validating via GET /users/me                                                                            |
+| 10  | Web App: Auth: State store              | Zustand useAuthStore, selector-only reads                                                                                                                                      |
+| 11  | Web App: Auth: Open-redirect protection | next query param validated to same-origin absolute paths (getSafeNextPath)                                                                                                     |
+| 12  | Web App: Env configuration              | .env.example / .env.local with API_URL                                                                                                                                         |
+| 13  | Web App: Feature worklog                | This document; every portion updates it in the same commit (rule in CLAUDE.md)                                                                                                 |
+| 14  | Web App: Auth: Multi-tab refresh lock   | navigator.locks + token re-check: parallel tabs cannot redeem the same refresh token and trip the backend's reuse detection; in-memory fallback where Web Locks is unavailable |
 
 ## Not implemented (future scope)
 
 | #   | Feature                                      | Notes                                                                                                   |
 | --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 14  | Web App: Auth: Logout flow                   | Header action calling POST /auth/logout + store/cookie cleanup                                          |
-| 15  | Web App: Auth: Multi-tab refresh lock        | navigator.locks + token re-check so parallel tabs cannot trip the backend's reuse detection             |
+| 15  | Web App: Auth: Logout flow                   | Header action calling POST /auth/logout + store/cookie cleanup                                          |
 | 16  | Web App: Auth: Forgot / reset password pages | Against /auth/forgot-password and /auth/reset-password                                                  |
 | 17  | Web App: Auth: Change password screen        | Against /auth/change-password; handles 400 (wrong current) and 429 (lockout)                            |
 | 18  | Web App: Auth: Email verification UI         | Unverified banner from emailVerified flag, resend via /auth/send-verification, /verify-email token page |
