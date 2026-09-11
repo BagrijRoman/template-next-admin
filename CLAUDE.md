@@ -5,6 +5,10 @@
 Next.js admin panel starter template (React, Tailwind CSS, React Query, Zustand).
 These rules are binding for any assistant or contributor working in this repo.
 
+## Feature worklog
+
+- `WORKLOG.md` is the atomic feature list used for project estimation (same format as the backend template). Every feature or meaningful change updates it **in the same commit**: one small feature per row, implemented work moves into "Implemented", planned work lives in "Not implemented (future scope)". The list must never lag behind the code.
+
 ## Code style
 
 - A linter and Prettier are mandatory tooling: the project must have them installed and configured (ESLint with the Next.js preset unless decided otherwise), with the linter enforcing the style rules below. Both must pass cleanly; run them before finishing any task.
