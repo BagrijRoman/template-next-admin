@@ -29,7 +29,15 @@ These rules are binding for any assistant or contributor working in this repo.
 - A value reused within one file is extracted to a `const` at the top of that file.
 - A value reused within one feature (but not beyond it) goes to a `<feature>.constants.ts` file inside that feature's folder.
 - A value reused across features goes to global constants in `src/lib/constants.ts` (create the file when the first shared constant appears) — the same literal must never be duplicated in two files.
-- Design tokens (colors, spacing, breakpoints) live in the Tailwind config, not in ad-hoc constants.
+- Visual values (colors, spacing, typography, …) are not constants: they belong to the design system — see "Design system" below.
+
+## Design system
+
+- The client has a basic design system, and it is the single source of every visual value: colors, typography, spacing, radii, shadows, breakpoints, z-index, motion. Tokens live in the `@theme` block of `src/app/globals.css` (Tailwind 4 — there is no `tailwind.config`), and components consume them only through the Tailwind utilities those tokens generate.
+- Components use **semantic** tokens (`bg-surface`, `text-muted`, `border-default`, `bg-primary`) — never raw palette classes (`bg-zinc-900`), hex values or arbitrary values (`p-[13px]`). A value the system lacks is added as a token first, then used.
+- Light and dark themes are defined once, in the token layer: components never write paired `dark:` color classes.
+- Anything visual used more than once belongs to the design system: a single value becomes a token; a repeated combination of classes (an input's styling, a card) becomes a component in `src/components/ui/` — never a copy-pasted class string.
+- The current UI predates this rule and still uses raw palette classes; migrating it is tracked in `WORKLOG.md`. New code follows the rule from now on.
 
 ## Routing & auth
 
