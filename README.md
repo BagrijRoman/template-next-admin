@@ -1,4 +1,4 @@
-# template-admin-web
+# template-next-web
 
 Starter template for admin panel web frontends.
 
