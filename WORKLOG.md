@@ -2,6 +2,8 @@
 
 Atomic feature breakdown for project estimation, one estimable unit per row — the same format as `template-backend/WORKLOG.md`. Every feature lands here in the same commit that implements it; the list never lags behind the code.
 
+> ⚠️ **Testing debt — everything below needs test coverage.** This template has no test setup yet, so every implemented feature (the whole auth flow included) is verified only by types, the production build and review. Rows 24–25 are the top priority: when the setup lands it must retrofit coverage for all already-implemented work — starting with `apiClient`'s refresh + cross-tab Web Lock, `tokenStorage` expiry handling, the store's 401-vs-network branch and both route guards — and from then on every feature ships with its tests in the same commit.
+
 ## Implemented
 
 | #   | Feature                                 | Notes                                                                                                                                                                          |
@@ -23,20 +25,20 @@ Atomic feature breakdown for project estimation, one estimable unit per row — 
 
 ## Not implemented (future scope)
 
-| #   | Feature                                      | Notes                                                                                                   |
-| --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 15  | Web App: Auth: Logout flow                   | Header action calling POST /auth/logout + store/storage cleanup                                         |
-| 16  | Web App: Auth: Forgot / reset password pages | Against /auth/forgot-password and /auth/reset-password                                                  |
-| 17  | Web App: Auth: Change password screen        | Against /auth/change-password; handles 400 (wrong current) and 429 (lockout)                            |
-| 18  | Web App: Auth: Email verification UI         | Unverified banner from emailVerified flag, resend via /auth/send-verification, /verify-email token page |
-| 19  | Web App: Rate-limit UX                       | Friendly 429 handling (lockout, email caps) across auth forms                                           |
-| 20  | Web App: Data layer                          | TanStack Query: query keys, mutations, invalidation, optimistic updates                                 |
-| 21  | Web App: Forms infrastructure                | react-hook-form + zod schemas mirroring backend validation rules                                        |
-| 22  | Web App: UI kit basics                       | Button, Input, Table, Modal, toast notifications; four-states convention (loading/empty/error/data)     |
-| 23  | Web App: Users screen with real data         | Paginated table over GET /users — blocked on backend roles + users list endpoint                        |
-| 24  | Web App: Unit/component tests                | Vitest + React Testing Library; apiClient refresh logic first                                           |
-| 25  | Web App: E2e tests                           | Playwright login flow against the real backend                                                          |
-| 26  | Web App: CI pipeline                         | GitHub Actions: lint, format check, typecheck, tests, build                                             |
-| 27  | Web App: Security rules & headers            | CLAUDE.md security section; security headers/CSP via next.config.ts; env validation                     |
-| 28  | Web App: Error boundary & 500 page           | Global error.tsx with recovery action                                                                   |
-| 29  | Web App: Docker setup                        | Dockerfile (standalone output)                                                                          |
+| #   | Feature                                      | Notes                                                                                                         |
+| --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 15  | Web App: Auth: Logout flow                   | Header action calling POST /auth/logout + store/storage cleanup                                               |
+| 16  | Web App: Auth: Forgot / reset password pages | Against /auth/forgot-password and /auth/reset-password                                                        |
+| 17  | Web App: Auth: Change password screen        | Against /auth/change-password; handles 400 (wrong current) and 429 (lockout)                                  |
+| 18  | Web App: Auth: Email verification UI         | Unverified banner from emailVerified flag, resend via /auth/send-verification, /verify-email token page       |
+| 19  | Web App: Rate-limit UX                       | Friendly 429 handling (lockout, email caps) across auth forms                                                 |
+| 20  | Web App: Data layer                          | TanStack Query: query keys, mutations, invalidation, optimistic updates                                       |
+| 21  | Web App: Forms infrastructure                | react-hook-form + zod schemas mirroring backend validation rules                                              |
+| 22  | Web App: UI kit basics                       | Button, Input, Table, Modal, toast notifications; four-states convention (loading/empty/error/data)           |
+| 23  | Web App: Users screen with real data         | Paginated table over GET /users — blocked on backend roles + users list endpoint                              |
+| 24  | Web App: Unit/component tests                | Vitest + React Testing Library; retrofit coverage for all existing features, apiClient refresh + guards first |
+| 25  | Web App: E2e tests                           | Playwright: login, refresh-on-expiry, sign-out and deep-link return against the real backend                  |
+| 26  | Web App: CI pipeline                         | GitHub Actions: lint, format check, typecheck, tests, build                                                   |
+| 27  | Web App: Security rules & headers            | CLAUDE.md security section; security headers/CSP via next.config.ts; env validation                           |
+| 28  | Web App: Error boundary & 500 page           | Global error.tsx with recovery action                                                                         |
+| 29  | Web App: Docker setup                        | Dockerfile (standalone output)                                                                                |

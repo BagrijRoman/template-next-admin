@@ -9,6 +9,11 @@ These rules are binding for any assistant or contributor working in this repo.
 
 - `WORKLOG.md` is the atomic feature list used for project estimation (same format as the backend template). Every feature or meaningful change updates it **in the same commit**: one small feature per row, implemented work moves into "Implemented", planned work lives in "Not implemented (future scope)". The list must never lag behind the code.
 
+## Testing
+
+- **The template has no test setup yet, and everything implemented so far is untested** — adding it (Vitest + React Testing Library, Playwright for the sign-in flow) is the top-priority item in `WORKLOG.md`. It must retrofit coverage for the existing code, starting with the riskiest logic: `apiClient`'s refresh + cross-tab Web Lock, `tokenStorage` expiry handling, `loadSession`'s 401-vs-network branch, and both route guards.
+- Once the setup exists, every feature and bug fix ships with its tests in the same commit, and a bug fix starts with a failing test that reproduces it (same rule as the backend template).
+
 ## Code style
 
 - A linter and Prettier are mandatory tooling: the project must have them installed and configured (ESLint with the Next.js preset unless decided otherwise), with the linter enforcing the style rules below. Both must pass cleanly; run them before finishing any task.
