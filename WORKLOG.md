@@ -12,9 +12,9 @@ Atomic feature breakdown for project estimation, one estimable unit per row — 
 | 4   | Web App: Routing skeleton               | Route groups (auth)/(app) with separate layouts; ROUTES constants (no hard-coded paths); / redirects to /dashboard; not-found page                                             |
 | 5   | Web App: App shell layout               | Sidebar + Header for the (app) group; centered card layout for (auth)                                                                                                          |
 | 6   | Web App: Auth: Login page               | LoginForm against POST /auth/sign-in, error display, redirect to a validated next path                                                                                         |
-| 7   | Web App: Auth: Token storage            | Both JWTs in cookies whose lifetime mirrors each token's exp — backend TTLs stay the single source of truth                                                                    |
+| 7   | Web App: Auth: Token storage            | Classic bearer: both JWTs in localStorage (shared across tabs), try/catch-safe; expired tokens replaced via the refresh flow                                                   |
 | 8   | Web App: Auth: API client               | Bearer header, single shared refresh on 401, one retry, session cleanup + onUnauthorized on a second 401; skipAuth for token-issuing endpoints                                 |
-| 9   | Web App: Auth: Route guard chain        | proxy.ts (middleware) optimistic cookie-presence redirects + AuthGuard validating via GET /users/me                                                                            |
+| 9   | Web App: Auth: Route guards             | Client-side only: AuthGuard validating via GET /users/me for (app), GuestGuard for (auth); API stays the enforcement point                                                     |
 | 10  | Web App: Auth: State store              | Zustand useAuthStore, selector-only reads                                                                                                                                      |
 | 11  | Web App: Auth: Open-redirect protection | next query param validated to same-origin absolute paths (getSafeNextPath)                                                                                                     |
 | 12  | Web App: Env configuration              | .env.example / .env.local with API_URL                                                                                                                                         |
@@ -25,7 +25,7 @@ Atomic feature breakdown for project estimation, one estimable unit per row — 
 
 | #   | Feature                                      | Notes                                                                                                   |
 | --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 15  | Web App: Auth: Logout flow                   | Header action calling POST /auth/logout + store/cookie cleanup                                          |
+| 15  | Web App: Auth: Logout flow                   | Header action calling POST /auth/logout + store/storage cleanup                                         |
 | 16  | Web App: Auth: Forgot / reset password pages | Against /auth/forgot-password and /auth/reset-password                                                  |
 | 17  | Web App: Auth: Change password screen        | Against /auth/change-password; handles 400 (wrong current) and 429 (lockout)                            |
 | 18  | Web App: Auth: Email verification UI         | Unverified banner from emailVerified flag, resend via /auth/send-verification, /verify-email token page |

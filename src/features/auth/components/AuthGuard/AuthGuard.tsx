@@ -3,16 +3,18 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useEffect } from 'react';
 import { FullScreenLoader } from '@/components/ui/FullScreenLoader';
+import { AUTH_STATUS } from '../../auth.constants';
 import { useAuthStore } from '../../auth.store';
-import { buildLoginUrl } from '../../auth.utils';
+import { buildLoginUrl, getReturnToPath } from '../../auth.utils';
 
 type AuthGuardProps = {
   children: ReactNode;
 };
 
 /**
- * Second line of defence after proxy.ts: validates the session against the API
- * and sends expired or revoked sessions back to the login page.
+ * The route guard: with tokens in localStorage the server cannot pre-check anything, so this
+ * client-side validation against the API is the only gate — expired or revoked sessions are
+ * sent back to the login page.
  */
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const status = useAuthStore((state) => state.status);
@@ -21,18 +23,19 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (status === 'idle') {
+    if (status === AUTH_STATUS.IDLE) {
       void loadSession();
     }
   }, [status, loadSession]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace(buildLoginUrl(pathname));
+    if (status === AUTH_STATUS.UNAUTHENTICATED) {
+      // The query string is part of the deep link: /users?page=3 must come back as /users?page=3.
+      router.replace(buildLoginUrl(getReturnToPath(pathname)));
     }
   }, [status, pathname, router]);
 
-  if (status !== 'authenticated') {
+  if (status !== AUTH_STATUS.AUTHENTICATED) {
     return <FullScreenLoader />;
   }
 

@@ -1,3 +1,5 @@
+import type { AUTH_STATUS } from './auth.constants';
+
 export type User = {
   id: string;
   email: string;
@@ -19,4 +21,4 @@ export type SignInPayload = {
   password: string;
 };
 
-export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
+export type AuthStatus = (typeof AUTH_STATUS)[keyof typeof AUTH_STATUS];

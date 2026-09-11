@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import { onUnauthorized } from '@/lib/apiClient';
+import { ApiError, onUnauthorized } from '@/lib/apiClient';
+import { HTTP_STATUS } from '@/lib/constants';
 import { authApi } from './auth.api';
+import { AUTH_STATUS } from './auth.constants';
 import type { AuthStatus, SignInPayload, User } from './auth.types';
 import { tokenStorage } from './tokenStorage';
 
@@ -16,26 +18,32 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  status: 'idle',
+  status: AUTH_STATUS.IDLE,
 
   loadSession: async () => {
     if (!tokenStorage.getRefreshToken()) {
-      set({ user: null, status: 'unauthenticated' });
+      set({ user: null, status: AUTH_STATUS.UNAUTHENTICATED });
       return;
     }
-    set({ status: 'loading' });
+    set({ status: AUTH_STATUS.LOADING });
     try {
       const user = await authApi.getMe();
-      set({ user, status: 'authenticated' });
-    } catch {
-      get().clearSession();
+      set({ user, status: AUTH_STATUS.AUTHENTICATED });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === HTTP_STATUS.UNAUTHORIZED) {
+        get().clearSession();
+        return;
+      }
+      // A network or server failure is not a revoked session: keep the tokens so the next
+      // attempt can still restore it, and only drop the user into the signed-out state.
+      set({ user: null, status: AUTH_STATUS.UNAUTHENTICATED });
     }
   },
 
   signIn: async (payload) => {
     const { user, ...tokens } = await authApi.signIn(payload);
     tokenStorage.setTokens(tokens);
-    set({ user, status: 'authenticated' });
+    set({ user, status: AUTH_STATUS.AUTHENTICATED });
   },
 
   signOut: async () => {
@@ -49,7 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearSession: () => {
     tokenStorage.clear();
-    set({ user: null, status: 'unauthenticated' });
+    set({ user: null, status: AUTH_STATUS.UNAUTHENTICATED });
   },
 }));
 

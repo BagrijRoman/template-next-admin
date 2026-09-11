@@ -1,36 +1,67 @@
-import Cookies from 'js-cookie';
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from './auth.constants';
+import { ACCESS_TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY } from './auth.constants';
 import type { TokenPair } from './auth.types';
 
 const MS_IN_SECOND = 1000;
 const JWT_PAYLOAD_INDEX = 1;
 
-const COOKIE_OPTIONS: Cookies.CookieAttributes = {
-  path: '/',
-  sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
-};
-
-/** Cookie lifetime mirrors the token's own `exp`, so the backend TTLs stay the single source of truth. */
-const getJwtExpiry = (token: string): Date | undefined => {
+// Classic bearer storage: both tokens live in localStorage. It is shared across tabs (the
+// cross-tab refresh lock's re-check relies on that) but invisible to the server, so all route
+// guarding is client-side. localStorage can throw (SSR, blocked site data) — auth must degrade
+// to "signed out", never crash.
+const read = (key: string): string | undefined => {
   try {
-    const payload = token.split('.')[JWT_PAYLOAD_INDEX];
-    const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
-    return exp ? new Date(exp * MS_IN_SECOND) : undefined;
+    return window.localStorage.getItem(key) ?? undefined;
   } catch {
     return undefined;
   }
 };
 
+const write = (key: string, value: string): void => {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Storage unavailable: the session simply won't survive a reload.
+  }
+};
+
+const remove = (key: string): void => {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Nothing to clean when storage is unavailable.
+  }
+};
+
+/**
+ * localStorage entries never expire on their own — unlike the cookies this replaced — so a
+ * long-dead token would keep reading as "there is a session" and send guards bouncing between
+ * pages. Reading `exp` is a UX shortcut only: the backend remains the authority on validity.
+ */
+const isExpired = (token: string): boolean => {
+  try {
+    const payload = token.split('.')[JWT_PAYLOAD_INDEX];
+    const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
+    return exp !== undefined && exp * MS_IN_SECOND <= Date.now();
+  } catch {
+    // Unparseable token: let the backend reject it rather than guessing here.
+    return false;
+  }
+};
+
+const readUsableToken = (key: string): string | undefined => {
+  const token = read(key);
+  return token && !isExpired(token) ? token : undefined;
+};
+
 export const tokenStorage = {
-  getAccessToken: () => Cookies.get(ACCESS_TOKEN_COOKIE),
-  getRefreshToken: () => Cookies.get(REFRESH_TOKEN_COOKIE),
+  getAccessToken: () => readUsableToken(ACCESS_TOKEN_STORAGE_KEY),
+  getRefreshToken: () => readUsableToken(REFRESH_TOKEN_STORAGE_KEY),
   setTokens: ({ accessToken, refreshToken }: TokenPair) => {
-    Cookies.set(ACCESS_TOKEN_COOKIE, accessToken, { ...COOKIE_OPTIONS, expires: getJwtExpiry(accessToken) });
-    Cookies.set(REFRESH_TOKEN_COOKIE, refreshToken, { ...COOKIE_OPTIONS, expires: getJwtExpiry(refreshToken) });
+    write(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+    write(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
   },
   clear: () => {
-    Cookies.remove(ACCESS_TOKEN_COOKIE, COOKIE_OPTIONS);
-    Cookies.remove(REFRESH_TOKEN_COOKIE, COOKIE_OPTIONS);
+    remove(ACCESS_TOKEN_STORAGE_KEY);
+    remove(REFRESH_TOKEN_STORAGE_KEY);
   },
 };

@@ -1,6 +1,12 @@
-// Kept dependency-free: imported by proxy.ts, which runs in the edge runtime.
-export const ACCESS_TOKEN_COOKIE = 'accessToken';
-export const REFRESH_TOKEN_COOKIE = 'refreshToken';
+export const ACCESS_TOKEN_STORAGE_KEY = 'accessToken';
+export const REFRESH_TOKEN_STORAGE_KEY = 'refreshToken';
+
+export const AUTH_STATUS = {
+  IDLE: 'idle',
+  LOADING: 'loading',
+  AUTHENTICATED: 'authenticated',
+  UNAUTHENTICATED: 'unauthenticated',
+} as const;
 
 export const AUTH_ENDPOINTS = {
   SIGN_IN: '/auth/sign-in',

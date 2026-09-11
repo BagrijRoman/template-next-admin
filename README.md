@@ -26,4 +26,4 @@ Starter template for admin panel web frontends.
 
 ## Routing and auth
 
-See the "Routing & auth" section in `CLAUDE.md` for the layout of routes, the session cookies and the guard chain.
+See the "Routing & auth" section in `CLAUDE.md` for the layout of routes, the localStorage session storage and the client-side route guards.

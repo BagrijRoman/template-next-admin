@@ -1,11 +1,10 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { ApiError } from '@/lib/apiClient';
-import { NEXT_PARAM } from '@/lib/constants';
 import { useAuthStore } from '../../auth.store';
-import { getSafeNextPath } from '../../auth.utils';
+import { getNextParam, getSafeNextPath } from '../../auth.utils';
 
 const GENERIC_ERROR = 'Something went wrong. Please try again.';
 
@@ -15,7 +14,6 @@ const inputClassName =
 export const LoginForm = () => {
   const signIn = useAuthStore((state) => state.signIn);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +25,7 @@ export const LoginForm = () => {
     setIsSubmitting(true);
     try {
       await signIn({ email, password });
-      router.replace(getSafeNextPath(searchParams.get(NEXT_PARAM)));
+      router.replace(getSafeNextPath(getNextParam()));
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : GENERIC_ERROR);
       setIsSubmitting(false);

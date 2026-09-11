@@ -1,10 +1,8 @@
 import { AUTH_ENDPOINTS } from '@/features/auth/auth.constants';
 import type { AuthResponse } from '@/features/auth/auth.types';
 import { tokenStorage } from '@/features/auth/tokenStorage';
-import { API_URL } from './constants';
+import { API_URL, HTTP_STATUS } from './constants';
 
-const HTTP_UNAUTHORIZED = 401;
-const HTTP_NO_CONTENT = 204;
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
@@ -36,7 +34,7 @@ export const onUnauthorized = (handler: UnauthorizedHandler) => {
 };
 
 // Cross-tab mutex name for the Web Locks API; the lock is origin-scoped and browser-managed,
-// so it survives (auto-releases on) tab crashes — unlike hand-rolled localStorage flags.
+// so it auto-releases when a tab holding it crashes — unlike hand-rolled lock flags.
 const REFRESH_LOCK = 'auth-refresh';
 
 const performRefresh = async (): Promise<boolean> => {
@@ -60,7 +58,7 @@ const performRefresh = async (): Promise<boolean> => {
  * Refresh tokens are single-use on the backend (a second redemption reads as theft and revokes
  * the whole session family), so two tabs must never refresh with the same token. The lock
  * serializes tabs; the re-check inside makes the waiting tab a no-op — the winner's fresh pair
- * is already in the shared cookies.
+ * is already in localStorage, which every tab of this origin shares.
  */
 const refreshExclusively = async (staleRefreshToken: string): Promise<boolean> =>
   await navigator.locks.request(REFRESH_LOCK, async () => {
@@ -88,7 +86,7 @@ const refreshSession = (): Promise<boolean> => {
 };
 
 const parseBody = async (response: Response): Promise<unknown> => {
-  if (response.status === HTTP_NO_CONTENT) {
+  if (response.status === HTTP_STATUS.NO_CONTENT) {
     return undefined;
   }
   const text = await response.text();
@@ -125,12 +123,12 @@ const send = (method: string, path: string, { body, skipAuth, headers, ...init }
 const request = async <T>(method: string, path: string, options: RequestOptions = {}): Promise<T> => {
   let response = await send(method, path, options);
 
-  if (response.status === HTTP_UNAUTHORIZED && !options.skipAuth) {
+  if (response.status === HTTP_STATUS.UNAUTHORIZED && !options.skipAuth) {
     const refreshed = await refreshSession();
     if (refreshed) {
       response = await send(method, path, options);
     }
-    if (response.status === HTTP_UNAUTHORIZED) {
+    if (response.status === HTTP_STATUS.UNAUTHORIZED) {
       tokenStorage.clear();
       unauthorizedHandlers.forEach((handler) => handler());
     }
