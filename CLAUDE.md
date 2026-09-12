@@ -47,11 +47,13 @@ These rules are binding for any assistant or contributor working in this repo.
 
 ## Design system
 
-- The client has a basic design system, and it is the single source of every visual value: colors, typography, spacing, radii, shadows, breakpoints, z-index, motion. Tokens live in the `@theme` block of `src/app/globals.css` (Tailwind 4 — there is no `tailwind.config`), and components consume them only through the Tailwind utilities those tokens generate.
-- Components use **semantic** tokens (`bg-surface`, `text-muted`, `border-default`, `bg-primary`) — never raw palette classes (`bg-zinc-900`), hex values or arbitrary values (`p-[13px]`). A value the system lacks is added as a token first, then used.
-- Light and dark themes are defined once, in the token layer: components never write paired `dark:` color classes.
-- Anything visual used more than once belongs to the design system: a single value becomes a token; a repeated combination of classes (an input's styling, a card) becomes a component in `src/components/ui/` — never a copy-pasted class string.
-- The current UI predates this rule and still uses raw palette classes; migrating it is tracked in `WORKLOG.md`. New code follows the rule from now on.
+- The design system is the single source of every visual value: colours, typography, spacing, radii, shadows, layering, motion. Raw values live as private CSS variables on `:root` in `src/app/globals.css` and are mapped to semantic Tailwind tokens in its `@theme` block (Tailwind 4 — there is no `tailwind.config`); components consume them only through the utilities those tokens generate.
+- Components use **semantic** tokens (`bg-surface`, `bg-page`, `text-foreground`, `text-muted`, `text-subtle`, `border-default`, `border-emphasis`, `bg-primary`, `text-danger`, `bg-success-soft`, `rounded-control`, `rounded-card`, `shadow-card`, `w-sidebar`, `h-header`, `max-w-form`, `z-(--z-modal)`, `duration-(--duration-fast)`) — never raw palette classes (`bg-zinc-900`), hex values or arbitrary values (`p-[13px]`). A value the system lacks is added as a token first (raw value on `:root`, light and dark, then the `@theme` mapping), then used, then shown on the showcase page.
+- Light and dark themes are defined once, in the `:root` / `prefers-color-scheme: dark` blocks of `globals.css`: components never write `dark:` colour classes.
+- Enforced by lint: the local ESLint rule `design-system/no-raw-visual-values` (`eslint/noRawVisualValues.mjs`) fails the build on raw palette classes, `bg-white`/`text-black`, hex colours, arbitrary values with units or colours, and `dark:` colour pairs in `src/**` (tests and `src/test/` excepted). Do not disable it inline — add a token.
+- The UI kit lives in `src/components/ui/` (Button, Input, Table + DataTable, Modal, toasts via `toast.*` + `Toaster`, Spinner, FullScreenLoader) and is built only on tokens. Anything visual used more than once belongs there: a repeated combination of classes becomes a component, never a copy-pasted class string. Compose class names with `cn` from `src/lib/cn.ts`.
+- Four-states convention: every data-driven screen renders loading, error, empty and data states — `DataTable` implements it for tables; other views follow the same order (loading → error → empty → data).
+- `/design-system` (inside the `(app)` group, linked from the sidebar) is the living reference: it renders every token and every UI-kit component in every state. A new token or component is added there in the same commit.
 
 ## Routing & auth
 

@@ -7,10 +7,8 @@ type AuthLayoutProps = {
 
 const AuthLayout = ({ children }: AuthLayoutProps) => (
   <GuestGuard>
-    <main className="flex flex-1 items-center justify-center bg-zinc-50 p-4 dark:bg-black">
-      <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        {children}
-      </div>
+    <main className="flex flex-1 items-center justify-center bg-page p-4">
+      <div className="w-full max-w-form rounded-card border border-default bg-surface p-8 shadow-card">{children}</div>
     </main>
   </GuestGuard>
 );

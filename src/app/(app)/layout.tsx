@@ -12,7 +12,7 @@ const AppLayout = ({ children }: AppLayoutProps) => (
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Header />
-        <main className="flex-1 bg-zinc-50 p-6 dark:bg-black">{children}</main>
+        <main className="flex-1 bg-page p-6">{children}</main>
       </div>
     </div>
   </AuthGuard>

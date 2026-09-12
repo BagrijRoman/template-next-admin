@@ -5,6 +5,7 @@ export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
   USERS: '/users',
+  DESIGN_SYSTEM: '/design-system',
 } as const;
 
 /** Query param carrying the path to return to after signing in. */
