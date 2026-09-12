@@ -1,11 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { FullScreenLoader } from '@/components/ui/FullScreenLoader';
-import { AUTH_STATUS } from '../../auth.constants';
-import { useAuthStore } from '../../auth.store';
-import { getNextParam, getSafeNextPath } from '../../auth.utils';
+import { useGuestGuard } from './useGuestGuard';
 
 type GuestGuardProps = {
   children: ReactNode;
@@ -14,28 +11,12 @@ type GuestGuardProps = {
 /**
  * Keeps signed-in users off guest-only pages. Session state comes from the store — the same
  * source `AuthGuard` reads — so the two guards can never disagree and bounce a visitor between
- * `/login` and the app. Guests render immediately: the loader appears only while a session is
- * being validated or a redirect is pending.
+ * `/login` and the app.
  */
 export const GuestGuard = ({ children }: GuestGuardProps) => {
-  const status = useAuthStore((state) => state.status);
-  const loadSession = useAuthStore((state) => state.loadSession);
-  const router = useRouter();
+  const { isGuest } = useGuestGuard();
 
-  useEffect(() => {
-    if (status === AUTH_STATUS.IDLE) {
-      void loadSession();
-    }
-  }, [status, loadSession]);
-
-  useEffect(() => {
-    if (status === AUTH_STATUS.AUTHENTICATED) {
-      // Honour the return path the same way LoginForm does, so a deep link survives the bounce.
-      router.replace(getSafeNextPath(getNextParam()));
-    }
-  }, [status, router]);
-
-  if (status === AUTH_STATUS.LOADING || status === AUTH_STATUS.AUTHENTICATED) {
+  if (!isGuest) {
     return <FullScreenLoader />;
   }
 

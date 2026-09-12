@@ -2,7 +2,7 @@
 
 # Admin Web Template — Engineering Guidelines
 
-Next.js admin panel starter template (React, Tailwind CSS, React Query, Zustand).
+Next.js admin panel starter template (React, Tailwind CSS, axios, Zustand; React Query planned for server state).
 These rules are binding for any assistant or contributor working in this repo.
 
 ## Feature worklog
@@ -11,8 +11,11 @@ These rules are binding for any assistant or contributor working in this repo.
 
 ## Testing
 
-- **The template has no test setup yet, and everything implemented so far is untested** — adding it (Vitest + React Testing Library, Playwright for the sign-in flow) is the top-priority item in `WORKLOG.md`. It must retrofit coverage for the existing code, starting with the riskiest logic: `apiClient`'s refresh + cross-tab Web Lock, `tokenStorage` expiry handling, `loadSession`'s 401-vs-network branch, and both route guards.
-- Once the setup exists, every feature and bug fix ships with its tests in the same commit, and a bug fix starts with a failing test that reproduces it (same rule as the backend template).
+- Unit and component tests run on Vitest + React Testing Library in a jsdom environment (`vitest.config.mts`, global setup in `src/test/setup.ts`). Tests are colocated with the code they cover (`apiClient.test.ts`, `AuthGuard/AuthGuard.test.tsx`); shared helpers live in `src/test/`. Run `npm test` (or `npm run test:cov`) before finishing any task.
+- Every feature and bug fix ships with its tests in the same commit, and a bug fix starts with a failing test that reproduces it (same rule as the backend template).
+- HTTP is tested end to end through `apiClient` with `installAxiosMock` (`src/test/axiosMock.ts`), which swaps the axios adapter for scripted in-memory replies — interceptors included. Call it **before** importing `apiClient` (use `vi.resetModules()` + dynamic import), because `axios.create` copies the global defaults at creation time. Never mock `apiClient` methods away in a test of the auth flow: the refresh/retry logic is the thing under test.
+- Next.js hooks (`useRouter`, `usePathname`) are mocked per test file via `vi.mock('next/navigation', …)`; guards and forms read the query string from `window.location`, so tests set it with `window.history.replaceState`.
+- E2e tests (Playwright: login, refresh-on-expiry, sign-out and deep-link return) are still planned — see `WORKLOG.md`.
 
 ## Code style
 
@@ -21,7 +24,17 @@ These rules are binding for any assistant or contributor working in this repo.
 - Prefer arrow functions over `function` declarations everywhere — components, hooks, handlers, utilities: `const UserCard = () => { ... }`.
 - Prefer `const` over `let` wherever the binding is never reassigned; `var` is forbidden.
 - Export through named `const` exports; avoid default exports and imports, except where Next.js requires a default (`page.tsx`, `layout.tsx`, other framework conventions and config files).
-- Group components into folders where possible (`UserCard/UserCard.tsx` plus its styles, tests, and subcomponents) and re-export the public ones through a shared `index.ts`, so consumers import from the folder path.
+
+## Component structure
+
+- Every component lives in its own folder named after it, and a large component is split by concern into separate files:
+  - `UserCard.tsx` — the component itself: markup and wiring only.
+  - `useUserCard.ts` — the component's logic as a hook (state, effects, handlers, store selectors, navigation). The component calls the hook and renders what it returns; no business logic in JSX files.
+  - `UserCard.styles.ts` — styles, only when needed (class-name maps or variant helpers; with Tailwind most components need none).
+  - `index.ts` — the public re-export; consumers always import from the folder path (`@/components/UserCard`), never from the inner files.
+  - Tests (`UserCard.test.tsx`) and private subcomponents sit in the same folder.
+- Small, simple components — presentational, no state or effects (a loader, an icon, a badge) — may be a single file plus `index.ts`. The moment a component grows non-trivial state, effects or handlers, extract them into its hook.
+- Every export is a named `export const` — the component, its hook, its styles, its constants. No default exports and no default imports (framework files like `page.tsx` and `layout.tsx` are the only exception).
 
 ## Constants
 
@@ -47,6 +60,6 @@ These rules are binding for any assistant or contributor working in this repo.
 - Guards are client-side and both read session state **only** from `useAuthStore` — never from `tokenStorage` directly: two sources of truth let the guards disagree and bounce a visitor between pages forever. `AuthGuard` in `(app)/layout.tsx` validates the session via `GET /users/me` and sends expired or revoked sessions to `/login?next=<path>` (path **and** query string); `GuestGuard` in `(auth)/layout.tsx` redirects signed-in users away, honouring `next`. Client guards are UX, not security — the API is the enforcement point (default-closed backend).
 - Guarding is opt-in per route group now that the middleware is gone: **every new route group must wrap its layout in a guard** (`AuthGuard` for anything requiring a session, `GuestGuard` for signed-out-only pages). A page added outside a guarded group is public, and nothing in the build will warn about it.
 - Only a `401` from the API means "session revoked" — a network or 5xx failure must never clear the stored tokens (see `loadSession`), or a short outage would sign every user out.
-- All API calls go through `apiClient` (`src/lib/apiClient.ts`): it attaches the bearer token, retries once after a shared refresh on 401, and on a second 401 clears the session and notifies `useAuthStore`. Pass `skipAuth: true` only for token-issuing endpoints. The refresh runs under a Web Lock (`navigator.locks`, origin-scoped) with a token re-check, so parallel tabs never redeem the same single-use refresh token — the backend treats a second redemption as theft and revokes the session family; never remove the lock or the re-check.
+- All API calls go through `apiClient` (`src/lib/apiClient.ts`), a thin wrapper over an **axios** instance. All cross-cutting HTTP logic lives in its interceptors, never in callers: the request interceptor attaches the bearer token; the response interceptor retries once after a shared refresh on 401, on a second 401 (or a failed refresh) clears the session and notifies `useAuthStore`, and normalises every HTTP error to `ApiError` (`status`, backend `message`/`details`, raw `body`). Network failures are rethrown as-is, so callers can tell an outage from a revoked session. Pass `skipAuth: true` only for token-issuing endpoints; `retriedAfterRefresh` is internal to the interceptor. The refresh call itself uses bare `axios`, not the instance, so it never re-enters the interceptors. The refresh runs under a Web Lock (`navigator.locks`, origin-scoped) with a token re-check, so parallel tabs never redeem the same single-use refresh token — the backend treats a second redemption as theft and revokes the session family; never remove the lock or the re-check.
 - Auth state lives in `useAuthStore` (`src/features/auth/auth.store.ts`); components read it through selectors, never through `getState()` in render.
 - The `next` query param is validated by `getSafeNextPath` (same-origin absolute paths only). Keep it that way to avoid open redirects.

@@ -1,15 +1,19 @@
+import axios, { type AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import { AUTH_ENDPOINTS } from '@/features/auth/auth.constants';
 import type { AuthResponse } from '@/features/auth/auth.types';
 import { tokenStorage } from '@/features/auth/tokenStorage';
 import { API_URL, HTTP_STATUS } from './constants';
 
-const JSON_HEADERS = { 'Content-Type': 'application/json' };
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    /** Skip the bearer header and the refresh-on-401 flow (sign-in, refresh, logout). */
+    skipAuth?: boolean;
+    /** Set by the response interceptor on the single post-refresh retry, so a second 401 is final. */
+    retriedAfterRefresh?: boolean;
+  }
+}
 
-type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
-  body?: unknown;
-  /** Skip the bearer header and the refresh-on-401 flow (sign-in, refresh, logout). */
-  skipAuth?: boolean;
-};
+type RequestOptions = Omit<AxiosRequestConfig, 'url' | 'method' | 'data' | 'baseURL' | 'retriedAfterRefresh'>;
 
 type ErrorBody = { message?: string; details?: string[] };
 
@@ -42,16 +46,14 @@ const performRefresh = async (): Promise<boolean> => {
   if (!refreshToken) {
     return false;
   }
-  const response = await fetch(`${API_URL}${AUTH_ENDPOINTS.REFRESH}`, {
-    method: 'POST',
-    headers: JSON_HEADERS,
-    body: JSON.stringify({ refreshToken }),
-  });
-  if (!response.ok) {
+  try {
+    // Bare axios call: the instance's interceptors must not run for the refresh itself.
+    const { data } = await axios.post<AuthResponse>(`${API_URL}${AUTH_ENDPOINTS.REFRESH}`, { refreshToken });
+    tokenStorage.setTokens(data);
+    return true;
+  } catch {
     return false;
   }
-  tokenStorage.setTokens((await response.json()) as AuthResponse);
-  return true;
 };
 
 /**
@@ -85,18 +87,6 @@ const refreshSession = (): Promise<boolean> => {
   return refreshPromise;
 };
 
-const parseBody = async (response: Response): Promise<unknown> => {
-  if (response.status === HTTP_STATUS.NO_CONTENT) {
-    return undefined;
-  }
-  const text = await response.text();
-  try {
-    return text ? JSON.parse(text) : undefined;
-  } catch {
-    return text;
-  }
-};
-
 /** Backend errors carry `message`, and validation errors add a `details` list with one entry per failed field. */
 const getErrorMessage = (body: unknown, fallback: string): string => {
   const { message, details } = (body as ErrorBody | undefined) ?? {};
@@ -106,44 +96,57 @@ const getErrorMessage = (body: unknown, fallback: string): string => {
   return message ?? fallback;
 };
 
-const send = (method: string, path: string, { body, skipAuth, headers, ...init }: RequestOptions) => {
-  const accessToken = skipAuth ? undefined : tokenStorage.getAccessToken();
-  return fetch(`${API_URL}${path}`, {
-    ...init,
-    method,
-    headers: {
-      ...(body === undefined ? {} : JSON_HEADERS),
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...headers,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+const httpClient = axios.create({ baseURL: API_URL });
+
+/** Request interceptor: attach the bearer token unless the call opted out with `skipAuth`. */
+const attachBearer = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+  const accessToken = config.skipAuth ? undefined : tokenStorage.getAccessToken();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
 };
 
-const request = async <T>(method: string, path: string, options: RequestOptions = {}): Promise<T> => {
-  let response = await send(method, path, options);
+const dropSession = (): void => {
+  tokenStorage.clear();
+  unauthorizedHandlers.forEach((handler) => handler());
+};
 
-  if (response.status === HTTP_STATUS.UNAUTHORIZED && !options.skipAuth) {
-    const refreshed = await refreshSession();
-    if (refreshed) {
-      response = await send(method, path, options);
-    }
-    if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-      tokenStorage.clear();
-      unauthorizedHandlers.forEach((handler) => handler());
-    }
+/**
+ * Response interceptor: a 401 on an authenticated call triggers one shared refresh and a single
+ * retry; a 401 that survives the retry (or a failed refresh) means the session is gone. Every
+ * HTTP error is normalised to `ApiError`; network failures (no response) are rethrown untouched
+ * so callers can tell a revoked session from an outage.
+ */
+const handleResponseError = async (error: AxiosError): Promise<unknown> => {
+  const { config, response } = error;
+  if (!response || !config) {
+    throw error;
   }
 
-  const data = await parseBody(response);
-  if (!response.ok) {
-    throw new ApiError(response.status, getErrorMessage(data, response.statusText), data);
+  if (response.status === HTTP_STATUS.UNAUTHORIZED && !config.skipAuth) {
+    if (!config.retriedAfterRefresh && (await refreshSession())) {
+      return httpClient.request({ ...config, retriedAfterRefresh: true });
+    }
+    dropSession();
   }
-  return data as T;
+
+  throw new ApiError(response.status, getErrorMessage(response.data, response.statusText), response.data);
+};
+
+httpClient.interceptors.request.use(attachBearer);
+httpClient.interceptors.response.use((response) => response, handleResponseError);
+
+const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
+  const { data } = await httpClient.request<T>(config);
+  return data;
 };
 
 export const apiClient = {
-  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
-  post: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('POST', path, { ...options, body }),
-  patch: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('PATCH', path, { ...options, body }),
-  delete: <T>(path: string, options?: RequestOptions) => request<T>('DELETE', path, options),
+  get: <T>(path: string, options?: RequestOptions) => request<T>({ ...options, method: 'GET', url: path }),
+  post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>({ ...options, method: 'POST', url: path, data: body }),
+  patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>({ ...options, method: 'PATCH', url: path, data: body }),
+  delete: <T>(path: string, options?: RequestOptions) => request<T>({ ...options, method: 'DELETE', url: path }),
 };

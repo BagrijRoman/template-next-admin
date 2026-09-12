@@ -1,11 +1,8 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
-import { type ReactNode, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { FullScreenLoader } from '@/components/ui/FullScreenLoader';
-import { AUTH_STATUS } from '../../auth.constants';
-import { useAuthStore } from '../../auth.store';
-import { buildLoginUrl, getReturnToPath } from '../../auth.utils';
+import { useAuthGuard } from './useAuthGuard';
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -17,25 +14,9 @@ type AuthGuardProps = {
  * sent back to the login page.
  */
 export const AuthGuard = ({ children }: AuthGuardProps) => {
-  const status = useAuthStore((state) => state.status);
-  const loadSession = useAuthStore((state) => state.loadSession);
-  const router = useRouter();
-  const pathname = usePathname();
+  const { isAuthenticated } = useAuthGuard();
 
-  useEffect(() => {
-    if (status === AUTH_STATUS.IDLE) {
-      void loadSession();
-    }
-  }, [status, loadSession]);
-
-  useEffect(() => {
-    if (status === AUTH_STATUS.UNAUTHENTICATED) {
-      // The query string is part of the deep link: /users?page=3 must come back as /users?page=3.
-      router.replace(buildLoginUrl(getReturnToPath(pathname)));
-    }
-  }, [status, pathname, router]);
-
-  if (status !== AUTH_STATUS.AUTHENTICATED) {
+  if (!isAuthenticated) {
     return <FullScreenLoader />;
   }
 
