@@ -15,7 +15,8 @@ These rules are binding for any assistant or contributor working in this repo.
 - Every feature and bug fix ships with its tests in the same commit, and a bug fix starts with a failing test that reproduces it (same rule as the backend template).
 - HTTP is tested end to end through `apiClient` with `installAxiosMock` (`src/test/axiosMock.ts`), which swaps the axios adapter for scripted in-memory replies — interceptors included. Call it **before** importing `apiClient` (use `vi.resetModules()` + dynamic import), because `axios.create` copies the global defaults at creation time. Never mock `apiClient` methods away in a test of the auth flow: the refresh/retry logic is the thing under test.
 - Next.js hooks (`useRouter`, `usePathname`) are mocked per test file via `vi.mock('next/navigation', …)`; guards and forms read the query string from `window.location`, so tests set it with `window.history.replaceState`.
-- E2e tests (Playwright: login, refresh-on-expiry, sign-out and deep-link return) are still planned — see `WORKLOG.md`.
+- E2e tests run on Playwright (`playwright.config.ts`, specs in `e2e/`, `npm run test:e2e`). They start their own dev server on a dedicated port and never reuse a running one, so a foreign app on the usual port cannot be picked up by mistake. The backend is faked in the browser by `mockApi` (`e2e/apiMock.ts`): it checks credentials and bearers, rotates single-use refresh tokens and records every call — the suite runs without a backend or database. The e2e code never imports app modules; the few shared literals (storage keys, endpoints) are mirrored in `e2e/` on purpose.
+- E2e gotchas: seed a session via `seedSession` (it uses the guard-free 404 page, so seeding cannot race a session load); match the form's `role="alert"` by text because Next.js adds its own route announcer; the dev server runs React StrictMode, so store actions triggered from effects must be idempotent (`loadSession` is).
 
 ## Code style
 

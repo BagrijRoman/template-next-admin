@@ -21,6 +21,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   status: AUTH_STATUS.IDLE,
 
   loadSession: async () => {
+    // Idempotent: React StrictMode (and any double mount) may fire the guard effect twice, and a
+    // second concurrent run would hit /users/me — and the single-use refresh token — again.
+    if (get().status === AUTH_STATUS.LOADING) {
+      return;
+    }
     if (!tokenStorage.getRefreshToken()) {
       set({ user: null, status: AUTH_STATUS.UNAUTHENTICATED });
       return;

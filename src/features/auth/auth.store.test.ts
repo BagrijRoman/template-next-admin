@@ -58,6 +58,16 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState()).toMatchObject({ user, status: AUTH_STATUS.AUTHENTICATED });
     });
 
+    it('ignores a second call while the first one is still validating', async () => {
+      tokenStorage.setTokens(tokens);
+      vi.mocked(authApi.getMe).mockResolvedValue(user);
+
+      await Promise.all([useAuthStore.getState().loadSession(), useAuthStore.getState().loadSession()]);
+
+      expect(authApi.getMe).toHaveBeenCalledTimes(1);
+      expect(useAuthStore.getState().status).toBe(AUTH_STATUS.AUTHENTICATED);
+    });
+
     it('clears the stored tokens when the API answers 401', async () => {
       tokenStorage.setTokens(tokens);
       vi.mocked(authApi.getMe).mockRejectedValue(new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized'));

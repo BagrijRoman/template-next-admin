@@ -2,7 +2,7 @@
 
 Starter template for admin panel web frontends.
 
-**Stack:** Next.js (App Router), React, Tailwind CSS, axios, Zustand. React Query is planned for server state. Tests: Vitest + React Testing Library.
+**Stack:** Next.js (App Router), React, Tailwind CSS, axios, Zustand. React Query is planned for server state. Tests: Vitest + React Testing Library (unit/component), Playwright (e2e).
 
 ## Getting started with a new project
 
