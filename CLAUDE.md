@@ -2,7 +2,7 @@
 
 # Admin Web Template — Engineering Guidelines
 
-Next.js admin panel starter template (React, Tailwind CSS, axios, Zustand; React Query planned for server state).
+Next.js admin panel starter template (React, Tailwind CSS, axios, TanStack Query, react-hook-form + zod, Zustand).
 These rules are binding for any assistant or contributor working in this repo.
 
 ## Feature worklog
@@ -54,6 +54,14 @@ These rules are binding for any assistant or contributor working in this repo.
 - The UI kit lives in `src/components/ui/` (Button, Input, Table + DataTable, Modal, toasts via `toast.*` + `Toaster`, Spinner, FullScreenLoader) and is built only on tokens. Anything visual used more than once belongs there: a repeated combination of classes becomes a component, never a copy-pasted class string. Compose class names with `cn` from `src/lib/cn.ts`.
 - Four-states convention: every data-driven screen renders loading, error, empty and data states — `DataTable` implements it for tables; other views follow the same order (loading → error → empty → data).
 - `/design-system` (inside the `(app)` group, linked from the sidebar) is the living reference: it renders every token and every UI-kit component in every state. A new token or component is added there in the same commit.
+
+## Data layer & forms
+
+- Server state is TanStack Query; the session (`useAuthStore`) is the only client-side state that mirrors the server, everything else is fetched through queries. `QueryProvider` (`src/components/providers/`) wraps the app; `getQueryClient()` (`src/lib/queryClient.ts`) returns the browser singleton — also outside React, which is how sign-out clears the cache — and a fresh client per server render.
+- Query keys come from the factory in `src/lib/queryKeys.ts` (`queryKeys.users.list(filters)`, `queryKeys.users.detail(id)` …), never inline arrays: invalidation sweeps by prefix (`invalidateQueries({ queryKey: queryKeys.users.all })`). Add a domain to the factory when a feature starts fetching.
+- Feature query/mutation hooks live in `<feature>.queries.ts` / `<feature>.mutations.ts` and wrap `<feature>.api.ts` calls (which go through `apiClient`). Wrap store actions in an explicit arrow inside `mutationFn` — it receives a mutation context as a second argument that the action must not see. Mutations invalidate the keys they affect in `onSuccess`; optimistic updates use `onMutate` + `onError` rollback and are reserved for interactions where the wait is noticeable.
+- Retry policy is set once in `createQueryClient`: 4xx never retries, network failures and 5xx retry a bounded number of times; mutations never retry. Session loading uses the store directly and does not retry.
+- Forms are react-hook-form with zod schemas (`zodResolver`). Field schemas that mirror backend validation live in `src/lib/schemas.ts` (`emailSchema`, `passwordSchema`, `requiredString`), feature form schemas in `<feature>.schemas.ts`; keep them in sync with the backend DTOs — the form must reject exactly what the API would. Form logic (`useForm`, submit, mutation) lives in the component's hook; the component only registers fields on `Input` and renders `errors.<field>?.message`. User-facing failure text comes from `getErrorMessage` (`src/lib/errors.ts`).
 
 ## Routing & auth
 

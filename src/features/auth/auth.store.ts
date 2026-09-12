@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ApiError, onUnauthorized } from '@/lib/apiClient';
 import { HTTP_STATUS } from '@/lib/constants';
+import { getQueryClient } from '@/lib/queryClient';
 import { authApi } from './auth.api';
 import { AUTH_STATUS } from './auth.constants';
 import type { AuthStatus, SignInPayload, User } from './auth.types';
@@ -62,6 +63,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearSession: () => {
     tokenStorage.clear();
+    // Server state is user-scoped: nothing cached for this session may show up in the next one.
+    getQueryClient().clear();
     set({ user: null, status: AUTH_STATUS.UNAUTHENTICATED });
   },
 }));

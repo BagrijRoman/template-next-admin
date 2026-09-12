@@ -15,3 +15,7 @@ export const HTTP_STATUS = {
   NO_CONTENT: 204,
   UNAUTHORIZED: 401,
 } as const;
+
+/** Password-strength bounds, identical to the backend's IsStrongPassword decorator. */
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128;

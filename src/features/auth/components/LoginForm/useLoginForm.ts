@@ -1,31 +1,32 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
-import { ApiError } from '@/lib/apiClient';
-import { useAuthStore } from '../../auth.store';
+import { useForm } from 'react-hook-form';
+import { getErrorMessage } from '@/lib/errors';
+import { useSignInMutation } from '../../auth.mutations';
+import { type SignInFormValues, signInSchema } from '../../auth.schemas';
 import { getNextParam, getSafeNextPath } from '../../auth.utils';
 
-const GENERIC_ERROR = 'Something went wrong. Please try again.';
+const DEFAULT_VALUES: SignInFormValues = { email: '', password: '' };
 
 export const useLoginForm = () => {
-  const signIn = useAuthStore((state) => state.signIn);
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm<SignInFormValues>({ resolver: zodResolver(signInSchema), defaultValues: DEFAULT_VALUES });
+  const signInMutation = useSignInMutation();
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
+  const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await signIn({ email, password });
+      await signInMutation.mutateAsync(values);
       router.replace(getSafeNextPath(getNextParam()));
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : GENERIC_ERROR);
-      setIsSubmitting(false);
+    } catch {
+      // Surfaced through signInMutation.error; swallowing keeps handleSubmit from rethrowing.
     }
-  };
+  });
 
-  return { email, setEmail, password, setPassword, error, isSubmitting, handleSubmit };
+  return {
+    form,
+    onSubmit,
+    // Stay disabled through the redirect: the mutation settles before the new page takes over.
+    isSubmitting: signInMutation.isPending || signInMutation.isSuccess,
+    submitError: signInMutation.error ? getErrorMessage(signInMutation.error) : null,
+  };
 };

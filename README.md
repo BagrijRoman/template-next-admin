@@ -2,7 +2,7 @@
 
 Starter template for admin panel web frontends.
 
-**Stack:** Next.js (App Router), React, Tailwind CSS (token-based design system), axios, Zustand. React Query is planned for server state. Tests: Vitest + React Testing Library (unit/component), Playwright (e2e).
+**Stack:** Next.js (App Router), React, Tailwind CSS (token-based design system), axios, TanStack Query, react-hook-form + zod, Zustand. Tests: Vitest + React Testing Library (unit/component), Playwright (e2e).
 
 ## Getting started with a new project
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/apiClient';
 import { HTTP_STATUS } from '@/lib/constants';
+import { getQueryClient } from '@/lib/queryClient';
 import { authApi } from './auth.api';
 import { AUTH_STATUS } from './auth.constants';
 import { useAuthStore } from './auth.store';
@@ -145,6 +146,14 @@ describe('useAuthStore', () => {
       expect(authApi.logout).not.toHaveBeenCalled();
       expect(useAuthStore.getState().status).toBe(AUTH_STATUS.UNAUTHENTICATED);
     });
+  });
+
+  it('drops cached server state together with the session', () => {
+    getQueryClient().setQueryData(['users', 'list'], [user]);
+
+    useAuthStore.getState().clearSession();
+
+    expect(getQueryClient().getQueryData(['users', 'list'])).toBeUndefined();
   });
 
   it('clears the session when apiClient reports a revoked session', () => {
