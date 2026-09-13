@@ -14,6 +14,7 @@ export const NEXT_PARAM = 'next';
 export const HTTP_STATUS = {
   NO_CONTENT: 204,
   UNAUTHORIZED: 401,
+  TOO_MANY_REQUESTS: 429,
 } as const;
 
 /** Password-strength bounds, identical to the backend's IsStrongPassword decorator. */

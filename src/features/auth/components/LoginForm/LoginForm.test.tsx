@@ -1,8 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '@/lib/apiClient';
 import { HTTP_STATUS, ROUTES } from '@/lib/constants';
+import { makeApiError } from '@/test/apiError';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import { useAuthStore } from '../../auth.store';
 import { LoginForm } from './LoginForm';
@@ -13,6 +13,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace }),
 }));
 
+const HTTP_BAD_REQUEST = 400;
 const credentials = { email: 'admin@example.com', password: 'secret' };
 
 const fillAndSubmit = async () => {
@@ -95,7 +96,9 @@ describe('LoginForm', () => {
   });
 
   it('shows the backend message for an API error and re-enables the form', async () => {
-    signIn.mockRejectedValue(new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Invalid credentials'));
+    signIn.mockRejectedValue(
+      makeApiError({ status: HTTP_STATUS.UNAUTHORIZED, code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' }),
+    );
     renderWithProviders(<LoginForm />);
 
     await fillAndSubmit();
@@ -105,8 +108,53 @@ describe('LoginForm', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it('places backend field errors under their inputs and shows nothing else', async () => {
+    signIn.mockRejectedValue(
+      makeApiError({
+        status: HTTP_BAD_REQUEST,
+        code: 'VALIDATION_FAILED',
+        message: 'Validation failed',
+        details: [{ field: 'email', rule: 'isEmail', message: 'email must be a valid email address' }],
+      }),
+    );
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit();
+
+    expect(await screen.findByText('email must be a valid email address')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('tells the user how long an account lockout lasts', async () => {
+    signIn.mockRejectedValue(
+      makeApiError({
+        status: HTTP_STATUS.TOO_MANY_REQUESTS,
+        code: 'ACCOUNT_LOCKED',
+        message: 'Too many failed sign-in attempts, try again later',
+        meta: { retryAfterSeconds: 900 },
+      }),
+    );
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Too many failed sign-in attempts, try again later. Try again in 15 minutes.',
+    );
+  });
+
+  it('names a network failure', async () => {
+    signIn.mockRejectedValue(new TypeError('Network Error'));
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server');
+  });
+
   it('shows a generic message for a non-API failure', async () => {
-    signIn.mockRejectedValue(new TypeError('Failed to fetch'));
+    signIn.mockRejectedValue(new Error('boom'));
     renderWithProviders(<LoginForm />);
 
     await fillAndSubmit();

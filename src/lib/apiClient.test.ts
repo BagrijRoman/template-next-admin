@@ -170,19 +170,27 @@ describe('apiClient', () => {
     expect(window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)).toBe('refresh-1');
   });
 
-  it('maps HTTP errors to ApiError with the backend message and validation details', async () => {
-    mock.reply(() => ({
-      status: HTTP_BAD_REQUEST,
-      data: { message: 'Bad', details: ['email is required', 'password is too short'] },
-    }));
+  it('parses the backend error contract into ApiError', async () => {
+    const body = {
+      statusCode: HTTP_BAD_REQUEST,
+      error: 'Bad Request',
+      code: 'VALIDATION_FAILED',
+      message: 'Validation failed',
+      details: [{ field: 'email', rule: 'isEmail', message: 'email must be a valid email address' }],
+      meta: { hint: 'x' },
+    };
+    mock.reply(() => ({ status: HTTP_BAD_REQUEST, data: body }));
     const { apiClient, ApiError } = await loadClient();
 
     const error = await apiClient.get(PATH).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({
       status: HTTP_BAD_REQUEST,
-      message: 'email is required, password is too short',
-      body: { message: 'Bad', details: ['email is required', 'password is too short'] },
+      code: 'VALIDATION_FAILED',
+      message: 'Validation failed',
+      details: body.details,
+      meta: { hint: 'x' },
+      body,
     });
   });
 
@@ -192,6 +200,7 @@ describe('apiClient', () => {
 
     await expect(apiClient.get(PATH)).rejects.toMatchObject({
       status: HTTP_SERVER_ERROR,
+      code: 'INTERNAL_ERROR',
       message: String(HTTP_SERVER_ERROR),
     });
   });

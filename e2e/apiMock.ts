@@ -20,8 +20,16 @@ export const USER = {
 };
 
 const HTTP = { OK: 200, NO_CONTENT: 204, UNAUTHORIZED: 401, NOT_FOUND: 404 } as const;
-const INVALID_CREDENTIALS = { message: 'Invalid credentials' };
-const UNAUTHORIZED = { message: 'Unauthorized' };
+const errorBody = (status: number, code: string, message: string, extra: Record<string, unknown> = {}) => ({
+  statusCode: status,
+  error: 'Error',
+  code,
+  message,
+  timestamp: new Date().toISOString(),
+  ...extra,
+});
+const INVALID_CREDENTIALS = errorBody(HTTP.UNAUTHORIZED, 'INVALID_CREDENTIALS', 'Invalid credentials');
+const UNAUTHORIZED = errorBody(HTTP.UNAUTHORIZED, 'UNAUTHENTICATED', 'Invalid or missing access token');
 
 export type ApiCall = { method: string; path: string; authorization?: string; body?: unknown };
 export type TokenPair = { accessToken: string; refreshToken: string };
@@ -111,7 +119,7 @@ export const mockApi = (target: Page | BrowserContext, options: MockOptions = {}
       return json(route, HTTP.NO_CONTENT);
     }
 
-    return json(route, HTTP.NOT_FOUND, { message: `Unhandled ${method} ${path}` });
+    return json(route, HTTP.NOT_FOUND, errorBody(HTTP.NOT_FOUND, 'NOT_FOUND', `Unhandled ${method} ${path}`));
   };
 
   const ready = target.route(`${API_URL}/**`, async (route) => {

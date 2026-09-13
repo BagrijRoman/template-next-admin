@@ -1,5 +1,15 @@
-import { isServer, QueryClient } from '@tanstack/react-query';
-import { ApiError } from './apiClient';
+import { isServer, MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
+import { toast } from '@/components/ui/Toast';
+import { ApiError } from './apiError';
+import { getErrorMessage } from './errors';
+
+declare module '@tanstack/react-query' {
+  interface Register {
+    /** `meta: { silent: true }` on a query or mutation keeps its failure off the toast channel. */
+    queryMeta: { silent?: boolean };
+    mutationMeta: { silent?: boolean };
+  }
+}
 
 const STALE_TIME_MS = 30_000;
 const MAX_RETRIES = 2;
@@ -13,8 +23,24 @@ const shouldRetry = (failureCount: number, error: unknown): boolean => {
   return failureCount < MAX_RETRIES;
 };
 
+/**
+ * Toasts are the default channel for failures: any query or mutation that does not opt out with
+ * `meta.silent` reports its error here. A 401 is never toasted — `apiClient` and the auth store own
+ * that flow and the user lands on the login page instead.
+ */
+export const reportError = (error: unknown, meta: { silent?: boolean } | undefined): void => {
+  if (meta?.silent || (error instanceof ApiError && error.isUnauthenticated)) {
+    return;
+  }
+  toast.error(getErrorMessage(error));
+};
+
 export const createQueryClient = () =>
   new QueryClient({
+    queryCache: new QueryCache({ onError: (error, query) => reportError(error, query.meta) }),
+    mutationCache: new MutationCache({
+      onError: (error, _variables, _context, mutation) => reportError(error, mutation.meta),
+    }),
     defaultOptions: {
       queries: { staleTime: STALE_TIME_MS, retry: shouldRetry, refetchOnWindowFocus: false },
       mutations: { retry: false },

@@ -2,7 +2,11 @@ import axios, { type AxiosError, type AxiosRequestConfig, type InternalAxiosRequ
 import { AUTH_ENDPOINTS } from '@/features/auth/auth.constants';
 import type { AuthResponse } from '@/features/auth/auth.types';
 import { tokenStorage } from '@/features/auth/tokenStorage';
+import { ApiError } from './apiError';
 import { API_URL, HTTP_STATUS } from './constants';
+
+export { ApiError, isApiError } from './apiError';
+export type { ErrorCode, ErrorResponseBody, FieldError } from './apiError';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -14,19 +18,6 @@ declare module 'axios' {
 }
 
 type RequestOptions = Omit<AxiosRequestConfig, 'url' | 'method' | 'data' | 'baseURL' | 'retriedAfterRefresh'>;
-
-type ErrorBody = { message?: string; details?: string[] };
-
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-    public readonly body?: unknown,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
 
 type UnauthorizedHandler = () => void;
 const unauthorizedHandlers = new Set<UnauthorizedHandler>();
@@ -87,15 +78,6 @@ const refreshSession = (): Promise<boolean> => {
   return refreshPromise;
 };
 
-/** Backend errors carry `message`, and validation errors add a `details` list with one entry per failed field. */
-const getErrorMessage = (body: unknown, fallback: string): string => {
-  const { message, details } = (body as ErrorBody | undefined) ?? {};
-  if (details?.length) {
-    return details.join(', ');
-  }
-  return message ?? fallback;
-};
-
 const httpClient = axios.create({ baseURL: API_URL });
 
 /** Request interceptor: attach the bearer token unless the call opted out with `skipAuth`. */
@@ -115,8 +97,8 @@ const dropSession = (): void => {
 /**
  * Response interceptor: a 401 on an authenticated call triggers one shared refresh and a single
  * retry; a 401 that survives the retry (or a failed refresh) means the session is gone. Every
- * HTTP error is normalised to `ApiError`; network failures (no response) are rethrown untouched
- * so callers can tell a revoked session from an outage.
+ * HTTP error is parsed into `ApiError` (code, field details, meta); network failures (no response)
+ * are rethrown untouched so callers can tell a revoked session from an outage.
  */
 const handleResponseError = async (error: AxiosError): Promise<unknown> => {
   const { config, response } = error;
@@ -131,7 +113,7 @@ const handleResponseError = async (error: AxiosError): Promise<unknown> => {
     dropSession();
   }
 
-  throw new ApiError(response.status, getErrorMessage(response.data, response.statusText), response.data);
+  throw new ApiError(response.status, response.data, response.statusText);
 };
 
 httpClient.interceptors.request.use(attachBearer);

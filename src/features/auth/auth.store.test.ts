@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '@/lib/apiClient';
 import { HTTP_STATUS } from '@/lib/constants';
 import { getQueryClient } from '@/lib/queryClient';
+import { makeApiError } from '@/test/apiError';
 import { authApi } from './auth.api';
 import { AUTH_STATUS } from './auth.constants';
 import { useAuthStore } from './auth.store';
@@ -71,7 +71,9 @@ describe('useAuthStore', () => {
 
     it('clears the stored tokens when the API answers 401', async () => {
       tokenStorage.setTokens(tokens);
-      vi.mocked(authApi.getMe).mockRejectedValue(new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Unauthorized'));
+      vi.mocked(authApi.getMe).mockRejectedValue(
+        makeApiError({ status: HTTP_STATUS.UNAUTHORIZED, code: 'UNAUTHENTICATED', message: 'Unauthorized' }),
+      );
 
       await useAuthStore.getState().loadSession();
 
@@ -81,7 +83,7 @@ describe('useAuthStore', () => {
 
     it.each([
       ['a network failure', new TypeError('Failed to fetch')],
-      ['a server error', new ApiError(HTTP_SERVER_ERROR, 'Internal Server Error')],
+      ['a server error', makeApiError({ status: HTTP_SERVER_ERROR, message: 'Internal Server Error' })],
     ])('keeps the stored tokens on %s', async (_label, error) => {
       tokenStorage.setTokens(tokens);
       vi.mocked(authApi.getMe).mockRejectedValue(error);
@@ -106,7 +108,11 @@ describe('useAuthStore', () => {
     });
 
     it('propagates the error and leaves the store untouched', async () => {
-      const error = new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Invalid credentials');
+      const error = makeApiError({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        code: 'INVALID_CREDENTIALS',
+        message: 'Invalid credentials',
+      });
       vi.mocked(authApi.signIn).mockRejectedValue(error);
 
       await expect(useAuthStore.getState().signIn(credentials)).rejects.toBe(error);
