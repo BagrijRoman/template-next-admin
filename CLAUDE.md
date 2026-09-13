@@ -7,7 +7,7 @@ These rules are binding for any assistant or contributor working in this repo.
 
 ## Feature worklog
 
-- `WORKLOG.md` is the atomic feature list used for project estimation (same format as the backend template). Every feature or meaningful change updates it **in the same commit**: one small feature per row, implemented work moves into "Implemented", planned work lives in "Not implemented (future scope)". The list must never lag behind the code.
+- `WORKLOG.md` is the atomic feature list used for project estimation (same format as the backend template). Every feature or meaningful change updates it **in the same commit**: one small feature per row, implemented work moves into "Implemented", planned work lives in "Not implemented (future scope)". The list must never lag behind the code. A row is one estimable unit: when a portion delivers several components or mechanisms, each gets its own row. Tests are work and get rows of their own: every feature with tests is followed by a `Web App: Tests: <feature>` row naming the test type (unit / component / e2e) and what it covers; test infrastructure has its own rows too.
 
 ## Testing
 
