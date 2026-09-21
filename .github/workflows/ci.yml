@@ -1,0 +1,65 @@
+# Every push and PR runs the same gate a release requires: lint (design-system rule included),
+# formatting, types, dependency audit (high+ blocks), unit/component tests, a production build,
+# and the Playwright e2e suite against its in-browser API fake — no backend or database needed.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run format:check
+
+      - run: npm run typecheck
+
+      - run: npm audit --audit-level=high
+
+      - run: npm test
+
+      - run: npm run build
+
+      # Browsers are cached per Playwright version (~150MB download otherwise); the OS packages
+      # they need are not part of the cache and are installed on every run.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - run: npm run test:e2e
+
+      # Traces of failed e2e tests (recorded on the first retry) for local inspection with
+      # `npx playwright show-trace`.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7

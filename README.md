@@ -14,15 +14,24 @@ Starter template for admin panel web frontends.
 
 ## Scripts
 
-| Script                 | What it does                            |
-| ---------------------- | --------------------------------------- |
-| `npm run dev`          | Dev server on <http://localhost:3001>   |
-| `npm run build`        | Production build                        |
-| `npm run start`        | Serve the production build on port 3001 |
-| `npm run lint`         | ESLint                                  |
-| `npm run typecheck`    | `tsc --noEmit` (run `build` once first) |
-| `npm run format`       | Prettier over the whole repo            |
-| `npm run format:check` | Prettier in check mode                  |
+| Script                 | What it does                                                                     |
+| ---------------------- | -------------------------------------------------------------------------------- |
+| `npm run dev`          | Dev server on <http://localhost:3001>                                            |
+| `npm run build`        | Production build                                                                 |
+| `npm run start`        | Serve the production build on port 3001                                          |
+| `npm run lint`         | ESLint                                                                           |
+| `npm run typecheck`    | `tsc --noEmit`                                                                   |
+| `npm run format`       | Prettier over the whole repo                                                     |
+| `npm run format:check` | Prettier in check mode                                                           |
+| `npm test`             | Unit and component tests (Vitest)                                                |
+| `npm run test:watch`   | Vitest in watch mode                                                             |
+| `npm run test:cov`     | Unit tests with coverage                                                         |
+| `npm run test:e2e`     | Playwright e2e suite (starts its own dev server on port 3101, no backend needed) |
+| `npm run test:e2e:ui`  | Playwright UI mode                                                               |
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on Node from `.nvmrc` on every push and pull request: lint, format check, typecheck, `npm audit` (high and above blocks), unit/component tests, production build and the Playwright e2e suite. Browsers are cached per Playwright version; traces of failed e2e tests are uploaded as the `playwright-traces` artifact.
 
 ## Routing and auth
 

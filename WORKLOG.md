@@ -72,16 +72,16 @@ Atomic feature breakdown for project estimation, one estimable unit per row — 
 | 64  | Web App: Tests: Error contract: Backend field errors on forms         | Unit: known fields set with nothing left over, unknown fields produce a form-level message, business errors keep the backend message, non-API failures fall back. Component: backend field error shown under the login input                                                                                                                                          |
 | 65  | Web App: Error contract: Toasts as the default failure channel        | QueryCache/MutationCache onError toast every failure; `meta.silent` opt-out for forms that render errors inline; 401 never toasted                                                                                                                                                                                                                                    |
 | 66  | Web App: Tests: Error contract: Toasts as the default failure channel | Unit: failed mutation toasted, silent mutations and 401s stay quiet, failed queries toasted unless silent                                                                                                                                                                                                                                                             |
+| 67  | Web App: CI pipeline                                                  | GitHub Actions on every push/PR: lint (design-system rule included), format check, typecheck, npm audit (high+ blocks), unit/component tests, production build, Playwright e2e against the in-browser API fake; Node version pinned by `.nvmrc`; Playwright browsers cached per version; e2e traces uploaded on failure                                               |
 
 ## Not implemented (future scope)
 
 | #   | Feature                                      | Notes                                                                                                   |
 | --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 67  | Web App: Auth: Forgot / reset password pages | Against /auth/forgot-password and /auth/reset-password                                                  |
-| 68  | Web App: Auth: Change password screen        | Against /auth/change-password; handles 400 (wrong current) and 429 (lockout)                            |
-| 69  | Web App: Auth: Email verification UI         | Unverified banner from emailVerified flag, resend via /auth/send-verification, /verify-email token page |
-| 70  | Web App: Users screen with real data         | Paginated table over GET /users — blocked on backend roles + users list endpoint                        |
-| 71  | Web App: CI pipeline                         | GitHub Actions: lint, format check, typecheck, tests, build                                             |
+| 68  | Web App: Auth: Forgot / reset password pages | Against /auth/forgot-password and /auth/reset-password                                                  |
+| 69  | Web App: Auth: Change password screen        | Against /auth/change-password; handles 400 (wrong current) and 429 (lockout)                            |
+| 70  | Web App: Auth: Email verification UI         | Unverified banner from emailVerified flag, resend via /auth/send-verification, /verify-email token page |
+| 71  | Web App: Users screen with real data         | Paginated table over GET /users — blocked on backend roles + users list endpoint                        |
 | 72  | Web App: Security rules & headers            | CLAUDE.md security section; security headers/CSP via next.config.ts; env validation                     |
 | 73  | Web App: Error boundary & 500 page           | Global error.tsx with recovery action                                                                   |
 | 74  | Web App: Docker setup                        | Dockerfile (standalone output)                                                                          |
