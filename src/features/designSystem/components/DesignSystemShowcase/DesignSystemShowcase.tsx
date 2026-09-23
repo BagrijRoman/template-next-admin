@@ -1,11 +1,23 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Button, DataTable, type DataTableColumn, Input, Modal, Spinner } from '@/components/ui';
+import {
+  AMBIENT_TONES,
+  AmbientBackdrop,
+  Button,
+  ButtonLink,
+  DataTable,
+  type DataTableColumn,
+  Input,
+  Modal,
+  Spinner,
+} from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { ROUTES } from '@/lib/constants';
 import {
   BORDER_SWATCHES,
   COLOR_SWATCHES,
+  MOTION_SAMPLES,
   RADIUS_SAMPLES,
   SAMPLE_ERROR,
   SAMPLE_ROWS,
@@ -100,7 +112,36 @@ export const DesignSystemShowcase = () => {
           <Button size="sm">Small</Button>
           <Button isLoading>Loading</Button>
           <Button disabled>Disabled</Button>
+          <ButtonLink href={ROUTES.DESIGN_SYSTEM}>Link</ButtonLink>
+          <ButtonLink href={ROUTES.DESIGN_SYSTEM} variant="secondary" size="sm">
+            Link, secondary
+          </ButtonLink>
           <Spinner size="sm" />
+        </div>
+      </Section>
+
+      <Section title="Motion">
+        <p className="text-sm text-muted">
+          Entrances play once on mount; ambient loops run forever. All of them stop under{' '}
+          <span className="font-mono">prefers-reduced-motion</span>, so nothing may depend on them to be readable.
+        </p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {MOTION_SAMPLES.map(({ name, className }) => (
+            <div key={name} className="flex flex-col items-center gap-2 rounded-card bg-surface-muted p-4">
+              <span className={cn('size-10 rounded-control bg-primary', className)} />
+              <span className="font-mono text-xs text-muted">{name}</span>
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {AMBIENT_TONES.map((tone) => (
+            <div key={tone} className="relative h-32 overflow-hidden rounded-card border border-default">
+              <AmbientBackdrop tone={tone} />
+              <span className="relative flex h-full items-center justify-center font-mono text-xs text-muted">
+                AmbientBackdrop · {tone}
+              </span>
+            </div>
+          ))}
         </div>
       </Section>
 

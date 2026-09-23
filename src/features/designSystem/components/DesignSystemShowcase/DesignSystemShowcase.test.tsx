@@ -16,6 +16,7 @@ describe('DesignSystemShowcase', () => {
       'Typography',
       'Radii & elevation',
       'Buttons',
+      'Motion',
       'Inputs',
       'Table — four states',
       'Modal & toasts',

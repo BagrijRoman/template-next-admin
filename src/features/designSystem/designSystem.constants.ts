@@ -50,6 +50,18 @@ export const SHADOW_SAMPLES: readonly TokenSwatch[] = [
   { name: 'shadow-overlay', className: 'shadow-overlay' },
 ];
 
+/** Every animate-* token, replayed on the showcase page. Extend when a token is added. */
+export const MOTION_SAMPLES: readonly TokenSwatch[] = [
+  { name: 'animate-rise', className: 'animate-rise' },
+  { name: 'animate-rise-delayed', className: 'animate-rise-delayed' },
+  { name: 'animate-rise-late', className: 'animate-rise-late' },
+  { name: 'animate-bob', className: 'animate-bob' },
+  { name: 'animate-bob-late', className: 'animate-bob-late' },
+  { name: 'animate-spin-slow', className: 'animate-spin-slow' },
+  { name: 'animate-drift-slow', className: 'animate-drift-slow' },
+  { name: 'animate-drift-slower', className: 'animate-drift-slower' },
+];
+
 export type SampleRow = { id: string; name: string; email: string; role: string };
 
 export const SAMPLE_ROWS: readonly SampleRow[] = [

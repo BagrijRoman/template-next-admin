@@ -56,9 +56,21 @@
   --z-modal: 50;
   --z-toast: 60;
 
-  /* Motion (consumed as duration-(--duration-*)) */
+  /* Motion (consumed as duration-(--duration-*), and by the animate-* tokens below) */
   --duration-fast: 150ms;
   --duration-base: 200ms;
+  --duration-slow: 400ms;
+  --duration-bob: 4s;
+  --duration-spin-slow: 9s;
+  --duration-drift: 14s;
+  --duration-drift-long: 22s;
+  --ease-out-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Motion distances: how far an animated element travels. */
+  --motion-rise: 0.75rem;
+  --motion-bob: 0.5rem;
+  --motion-drift-x: 2.5rem;
+  --motion-drift-y: -2rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -150,7 +162,69 @@
   --container-form: 24rem;
 
   /* Motion: ease-standard */
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-standard: var(--ease-out-standard);
+
+  /*
+   * Motion: animate-* utilities. Entrances (rise) are staggered through separate tokens
+   * because an animation delay has no utility of its own, and ambient loops (bob, drift,
+   * spin-slow) are decorative only. Every keyframe is neutralised under
+   * prefers-reduced-motion below, so a page must stay readable with all of them stopped.
+   */
+  --animate-rise: rise var(--duration-slow) var(--ease-out-standard) both;
+  --animate-rise-delayed: rise var(--duration-slow) var(--ease-out-standard) 120ms both;
+  --animate-rise-late: rise var(--duration-slow) var(--ease-out-standard) 240ms both;
+  --animate-bob: bob var(--duration-bob) ease-in-out infinite;
+  --animate-bob-late: bob var(--duration-bob) ease-in-out 700ms infinite;
+  --animate-spin-slow: spin var(--duration-spin-slow) linear infinite;
+  --animate-drift-slow: drift var(--duration-drift) ease-in-out infinite alternate;
+  --animate-drift-slower: drift var(--duration-drift-long) ease-in-out 2s infinite alternate;
+}
+
+/* Keyframes for the animate-* tokens above. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-rise));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(var(--motion-bob));
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(var(--motion-drift-x), var(--motion-drift-y), 0) scale(1.15);
+  }
+}
+
+/*
+ * Accessibility: visitors who ask for less motion get the end state, never the movement.
+ * Entrance animations use `both`, so a 1ms duration lands them on their final frame.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 body {
