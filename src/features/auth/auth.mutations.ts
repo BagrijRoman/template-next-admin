@@ -36,3 +36,9 @@ export const useChangePasswordMutation = () => {
     meta: { silent: true },
   });
 };
+
+export const useSendVerificationMutation = () =>
+  useMutation({ mutationFn: () => authApi.sendVerification(), meta: { silent: true } });
+
+export const useVerifyEmailMutation = () =>
+  useMutation({ mutationFn: (token: string) => authApi.verifyEmail(token), meta: { silent: true } });

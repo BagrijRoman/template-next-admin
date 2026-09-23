@@ -16,7 +16,9 @@ export const AUTH_ENDPOINTS = {
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
   CHANGE_PASSWORD: '/auth/change-password',
+  SEND_VERIFICATION: '/auth/send-verification',
+  VERIFY_EMAIL: '/auth/verify-email',
 } as const;
 
-/** Query param carrying the single-use token from the password-reset email. */
-export const RESET_TOKEN_PARAM = 'token';
+/** Query param carrying the single-use token of a password-reset or verification email. */
+export const TOKEN_PARAM = 'token';

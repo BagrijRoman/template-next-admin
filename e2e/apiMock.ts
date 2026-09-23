@@ -11,6 +11,8 @@ export const ENDPOINTS = {
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
   CHANGE_PASSWORD: '/auth/change-password',
+  SEND_VERIFICATION: '/auth/send-verification',
+  VERIFY_EMAIL: '/auth/verify-email',
 } as const;
 
 export const CREDENTIALS = { email: 'admin@example.com', password: 'Password123!' };
@@ -53,10 +55,18 @@ const INVALID_CREDENTIALS = errorBody(HTTP.UNAUTHORIZED, 'INVALID_CREDENTIALS', 
 const UNAUTHORIZED = errorBody(HTTP.UNAUTHORIZED, 'UNAUTHENTICATED', 'Invalid or missing access token');
 const FORBIDDEN = errorBody(HTTP.FORBIDDEN, 'FORBIDDEN', 'Insufficient role');
 const EXPIRED_RESET_TOKEN = errorBody(HTTP.BAD_REQUEST, 'INVALID_RESET_TOKEN', 'This reset link has expired');
+const EXPIRED_VERIFICATION_TOKEN = errorBody(
+  HTTP.BAD_REQUEST,
+  'INVALID_VERIFICATION_TOKEN',
+  'This verification link has expired',
+);
 const WRONG_CURRENT_PASSWORD = errorBody(HTTP.BAD_REQUEST, 'WRONG_CURRENT_PASSWORD', 'Current password is incorrect');
 
 /** The only reset token this fake accepts; anything else is treated as spent or expired. */
 export const VALID_RESET_TOKEN = 'reset-ok';
+
+/** The only verification token this fake accepts; anything else reads as spent or expired. */
+export const VALID_VERIFICATION_TOKEN = 'verify-ok';
 
 export type ApiCall = { method: string; path: string; query?: string; authorization?: string; body?: unknown };
 export type TokenPair = { accessToken: string; refreshToken: string };
@@ -70,6 +80,8 @@ type MockOptions = {
   refreshDelayMs?: number;
   /** Role of the signed-in account; a plain user is refused by the admin-only list. */
   role?: 'user' | 'admin';
+  /** Starting verification state of the signed-in account; verifying flips it for later reads. */
+  emailVerified?: boolean;
 };
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -96,7 +108,8 @@ export const mockApi = (target: Page | BrowserContext, options: MockOptions = {}
   const json = (route: Route, status: number, body?: unknown) =>
     route.fulfill({ status, contentType: 'application/json', body: body === undefined ? '' : JSON.stringify(body) });
 
-  const currentUser = () => ({ ...USER, role: options.role ?? USER.role });
+  let emailVerified = options.emailVerified ?? USER.emailVerified;
+  const currentUser = () => ({ ...USER, role: options.role ?? USER.role, emailVerified });
 
   const handle = async (route: Route) => {
     const request = route.request();
@@ -182,6 +195,22 @@ export const mockApi = (target: Page | BrowserContext, options: MockOptions = {}
       validAccessTokens.clear();
       validRefreshTokens.clear();
       return json(route, HTTP.OK, { ...issuePair(), user: currentUser() });
+    }
+
+    if (path === ENDPOINTS.SEND_VERIFICATION && method === 'POST') {
+      const token = authorization?.replace(/^Bearer /, '');
+      return token && validAccessTokens.has(token)
+        ? json(route, HTTP.NO_CONTENT)
+        : json(route, HTTP.UNAUTHORIZED, UNAUTHORIZED);
+    }
+
+    if (path === ENDPOINTS.VERIFY_EMAIL && method === 'POST') {
+      if (body?.token !== VALID_VERIFICATION_TOKEN) {
+        return json(route, HTTP.BAD_REQUEST, EXPIRED_VERIFICATION_TOKEN);
+      }
+      // Single use, and the account reads as verified from here on.
+      emailVerified = true;
+      return json(route, HTTP.NO_CONTENT);
     }
 
     if (path === ENDPOINTS.LOGOUT && method === 'POST') {

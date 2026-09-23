@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui';
 import { ROUTES } from '@/lib/constants';
 import { applyFieldErrors } from '@/lib/forms';
-import { RESET_TOKEN_PARAM } from '../../auth.constants';
+import { TOKEN_PARAM } from '../../auth.constants';
 import { useResetPasswordMutation } from '../../auth.mutations';
 import { type ResetPasswordFormValues, resetPasswordSchema } from '../../auth.schemas';
 
@@ -20,7 +20,7 @@ export const useResetPasswordForm = () => {
    * page is prerendered and touching `window` here crashes the server render. The Suspense
    * boundary around the form is what lets Next fill the URL in on the client.
    */
-  const token = useSearchParams().get(RESET_TOKEN_PARAM) ?? '';
+  const token = useSearchParams().get(TOKEN_PARAM) ?? '';
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: DEFAULT_VALUES,

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Header, Sidebar } from '@/components/layout';
-import { AuthGuard } from '@/features/auth';
+import { AuthGuard, EmailVerificationBanner } from '@/features/auth';
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -12,6 +12,7 @@ const AppLayout = ({ children }: AppLayoutProps) => (
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <Header />
+        <EmailVerificationBanner />
         <main className="flex-1 bg-page p-6">{children}</main>
       </div>
     </div>

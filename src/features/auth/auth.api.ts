@@ -12,4 +12,7 @@ export const authApi = {
   // Answers with a fresh session: changing the password revokes every other one, this one included.
   changePassword: (payload: ChangePasswordPayload) =>
     apiClient.post<AuthResponse>(AUTH_ENDPOINTS.CHANGE_PASSWORD, payload),
+  /** Sends a verification email to the signed-in account; the backend knows which address. */
+  sendVerification: () => apiClient.post<void>(AUTH_ENDPOINTS.SEND_VERIFICATION),
+  verifyEmail: (token: string) => apiClient.post<void>(AUTH_ENDPOINTS.VERIFY_EMAIL, { token }),
 };
