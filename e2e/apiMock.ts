@@ -8,6 +8,8 @@ export const ENDPOINTS = {
   LOGOUT: '/auth/logout',
   ME: '/users/me',
   USERS: '/users',
+  FORGOT_PASSWORD: '/auth/forgot-password',
+  RESET_PASSWORD: '/auth/reset-password',
 } as const;
 
 export const CREDENTIALS = { email: 'admin@example.com', password: 'Password123!' };
@@ -37,7 +39,7 @@ const listedUser = (index: number) => ({
   updatedAt: '2026-01-31T00:00:00.000Z',
 });
 
-const HTTP = { OK: 200, NO_CONTENT: 204, UNAUTHORIZED: 401, FORBIDDEN: 403, NOT_FOUND: 404 } as const;
+const HTTP = { OK: 200, NO_CONTENT: 204, BAD_REQUEST: 400, UNAUTHORIZED: 401, FORBIDDEN: 403, NOT_FOUND: 404 } as const;
 const errorBody = (status: number, code: string, message: string, extra: Record<string, unknown> = {}) => ({
   statusCode: status,
   error: 'Error',
@@ -49,6 +51,10 @@ const errorBody = (status: number, code: string, message: string, extra: Record<
 const INVALID_CREDENTIALS = errorBody(HTTP.UNAUTHORIZED, 'INVALID_CREDENTIALS', 'Invalid credentials');
 const UNAUTHORIZED = errorBody(HTTP.UNAUTHORIZED, 'UNAUTHENTICATED', 'Invalid or missing access token');
 const FORBIDDEN = errorBody(HTTP.FORBIDDEN, 'FORBIDDEN', 'Insufficient role');
+const EXPIRED_RESET_TOKEN = errorBody(HTTP.BAD_REQUEST, 'INVALID_RESET_TOKEN', 'This reset link has expired');
+
+/** The only reset token this fake accepts; anything else is treated as spent or expired. */
+export const VALID_RESET_TOKEN = 'reset-ok';
 
 export type ApiCall = { method: string; path: string; query?: string; authorization?: string; body?: unknown };
 export type TokenPair = { accessToken: string; refreshToken: string };
@@ -149,6 +155,17 @@ export const mockApi = (target: Page | BrowserContext, options: MockOptions = {}
         return json(route, HTTP.OK, { ...issuePair(), user: currentUser() });
       }
       return json(route, HTTP.UNAUTHORIZED, UNAUTHORIZED);
+    }
+
+    if (path === ENDPOINTS.FORGOT_PASSWORD && method === 'POST') {
+      // Always 204, exactly like the real endpoint: the answer never reveals who has an account.
+      return json(route, HTTP.NO_CONTENT);
+    }
+
+    if (path === ENDPOINTS.RESET_PASSWORD && method === 'POST') {
+      return body?.token === VALID_RESET_TOKEN
+        ? json(route, HTTP.NO_CONTENT)
+        : json(route, HTTP.BAD_REQUEST, EXPIRED_RESET_TOKEN);
     }
 
     if (path === ENDPOINTS.LOGOUT && method === 'POST') {

@@ -13,5 +13,7 @@ export type { PaginationProps } from './Pagination';
 export { Spinner } from './Spinner';
 export { DataTable, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, TableStateRow } from './Table';
 export type { DataTableColumn, DataTableProps } from './Table';
+export { TextLink } from './TextLink';
+export type { TextLinkProps } from './TextLink';
 export { toast, Toaster, useToastStore } from './Toast';
 export type { Toast, ToastVariant } from './Toast';

@@ -13,4 +13,9 @@ export const AUTH_ENDPOINTS = {
   REFRESH: '/auth/refresh',
   LOGOUT: '/auth/logout',
   ME: '/users/me',
+  FORGOT_PASSWORD: '/auth/forgot-password',
+  RESET_PASSWORD: '/auth/reset-password',
 } as const;
+
+/** Query param carrying the single-use token from the password-reset email. */
+export const RESET_TOKEN_PARAM = 'token';

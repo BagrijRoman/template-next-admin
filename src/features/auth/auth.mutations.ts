@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
+import { authApi } from './auth.api';
 import { useAuthStore } from './auth.store';
-import type { SignInPayload } from './auth.types';
+import type { ResetPasswordPayload, SignInPayload } from './auth.types';
 
 /**
  * Sign-in as a mutation: the store owns the session, TanStack Query owns the request lifecycle.
@@ -16,3 +17,13 @@ export const useSignOutMutation = () => {
   const signOut = useAuthStore((state) => state.signOut);
   return useMutation({ mutationFn: () => signOut() });
 };
+
+/** Silent like the rest of the auth forms: the page shows the outcome inline, not as a toast. */
+export const useForgotPasswordMutation = () =>
+  useMutation({ mutationFn: (email: string) => authApi.forgotPassword(email), meta: { silent: true } });
+
+export const useResetPasswordMutation = () =>
+  useMutation({
+    mutationFn: (payload: ResetPasswordPayload) => authApi.resetPassword(payload),
+    meta: { silent: true },
+  });

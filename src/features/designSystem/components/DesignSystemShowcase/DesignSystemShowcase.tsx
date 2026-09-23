@@ -12,6 +12,7 @@ import {
   Modal,
   Pagination,
   Spinner,
+  TextLink,
 } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { ROUTES } from '@/lib/constants';
@@ -120,6 +121,7 @@ export const DesignSystemShowcase = () => {
             Link, secondary
           </ButtonLink>
           <Spinner size="sm" />
+          <TextLink href={ROUTES.DESIGN_SYSTEM}>Text link</TextLink>
         </div>
       </Section>
 
