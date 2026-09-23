@@ -1,9 +1,17 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { Spinner } from '@/components/ui';
+import { UsersScreen } from '@/features/users';
 
 export const metadata: Metadata = {
   title: 'Users',
 };
 
-const UsersPage = () => <h1 className="text-2xl font-semibold">Users</h1>;
+// useSearchParams needs a Suspense boundary: the page number arrives with the URL, not the HTML.
+const UsersPage = () => (
+  <Suspense fallback={<Spinner className="mx-auto" />}>
+    <UsersScreen />
+  </Suspense>
+);
 
 export default UsersPage;

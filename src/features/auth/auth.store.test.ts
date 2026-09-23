@@ -7,6 +7,7 @@ import { AUTH_STATUS } from './auth.constants';
 import { useAuthStore } from './auth.store';
 import type { User } from './auth.types';
 import { tokenStorage } from './tokenStorage';
+import { USER_ROLES } from '@/features/users/users.types';
 
 vi.mock('./auth.api', () => ({
   authApi: { signIn: vi.fn(), logout: vi.fn(), getMe: vi.fn() },
@@ -28,6 +29,8 @@ const user: User = {
   email: 'a@b.c',
   firstName: 'A',
   lastName: 'B',
+  emailVerified: true,
+  role: USER_ROLES.ADMIN,
   createdAt: '2026-01-01',
   updatedAt: '2026-01-01',
 };

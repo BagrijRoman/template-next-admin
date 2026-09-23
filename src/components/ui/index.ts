@@ -8,6 +8,8 @@ export { FullScreenLoader } from './FullScreenLoader';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 export { Modal } from './Modal';
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
 export { Spinner } from './Spinner';
 export { DataTable, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, TableStateRow } from './Table';
 export type { DataTableColumn, DataTableProps } from './Table';

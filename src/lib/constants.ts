@@ -10,6 +10,9 @@ export const ROUTES = {
   DESIGN_SYSTEM: '/design-system',
 } as const;
 
+/** Page numbers are 1-based wherever they appear in a URL. */
+export const FIRST_PAGE = 1;
+
 /** Query param carrying the path to return to after signing in. */
 export const NEXT_PARAM = 'next';
 

@@ -71,3 +71,6 @@ export const SAMPLE_ROWS: readonly SampleRow[] = [
 ];
 
 export const SAMPLE_ERROR = 'Could not load users. Try again.';
+
+export const SAMPLE_PAGE_SIZE = 20;
+export const SAMPLE_TOTAL = 42;

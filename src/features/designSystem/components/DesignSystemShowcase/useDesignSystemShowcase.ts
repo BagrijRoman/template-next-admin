@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { toast } from '@/components/ui';
+import { FIRST_PAGE } from '@/lib/constants';
 
 export const useDesignSystemShowcase = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [page, setPage] = useState(FIRST_PAGE);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -11,5 +13,5 @@ export const useDesignSystemShowcase = () => {
   const showErrorToast = () => toast.error('Something failed', 'The server did not respond.');
   const showInfoToast = () => toast.info('Heads up');
 
-  return { isModalOpen, openModal, closeModal, showSuccessToast, showErrorToast, showInfoToast };
+  return { isModalOpen, openModal, closeModal, showSuccessToast, showErrorToast, showInfoToast, page, setPage };
 };

@@ -6,12 +6,15 @@ import { useAuthStore } from '@/features/auth/auth.store';
 import type { User } from '@/features/auth/auth.types';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import { Header } from './Header';
+import { USER_ROLES } from '@/features/users/users.types';
 
 const user: User = {
   id: 'u1',
   email: 'a@b.c',
   firstName: 'A',
   lastName: 'B',
+  emailVerified: true,
+  role: USER_ROLES.ADMIN,
   createdAt: '2026-01-01',
   updatedAt: '2026-01-01',
 };

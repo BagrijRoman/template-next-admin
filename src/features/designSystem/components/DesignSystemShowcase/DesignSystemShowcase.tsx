@@ -10,6 +10,7 @@ import {
   type DataTableColumn,
   Input,
   Modal,
+  Pagination,
   Spinner,
 } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -20,7 +21,9 @@ import {
   MOTION_SAMPLES,
   RADIUS_SAMPLES,
   SAMPLE_ERROR,
+  SAMPLE_PAGE_SIZE,
   SAMPLE_ROWS,
+  SAMPLE_TOTAL,
   type SampleRow,
   SHADOW_SAMPLES,
   TEXT_SWATCHES,
@@ -47,7 +50,7 @@ const getRowKey = (row: SampleRow) => row.id;
 
 /** Living reference of every token and UI-kit component — the place to look before building a screen. */
 export const DesignSystemShowcase = () => {
-  const { isModalOpen, openModal, closeModal, showSuccessToast, showErrorToast, showInfoToast } =
+  const { isModalOpen, openModal, closeModal, showSuccessToast, showErrorToast, showInfoToast, page, setPage } =
     useDesignSystemShowcase();
 
   return (
@@ -161,6 +164,7 @@ export const DesignSystemShowcase = () => {
           <DataTable columns={columns} rows={[]} getRowKey={getRowKey} emptyMessage="No users yet." />
           <DataTable columns={columns} rows={[...SAMPLE_ROWS]} getRowKey={getRowKey} />
         </div>
+        <Pagination page={page} pageSize={SAMPLE_PAGE_SIZE} total={SAMPLE_TOTAL} onPageChange={setPage} />
       </Section>
 
       <Section title="Modal & toasts">

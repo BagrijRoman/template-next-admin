@@ -1,13 +1,9 @@
+import type { User } from '@/features/users/users.types';
 import type { AUTH_STATUS } from './auth.constants';
 
-export type User = {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  createdAt: string;
-  updatedAt: string;
-};
+// The user shape belongs to the users domain (it mirrors the backend's UserResponseDto there);
+// auth only carries it in the session, so it re-exports rather than declaring a second version.
+export type { User } from '@/features/users/users.types';
 
 export type TokenPair = {
   accessToken: string;
