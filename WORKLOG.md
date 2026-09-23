@@ -103,4 +103,3 @@ Atomic feature breakdown for project estimation, one estimable unit per row — 
 | --- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | 91  | Web App: Auth: Change password screen | Against /auth/change-password; handles 400 (wrong current) and 429 (lockout)                            |
 | 92  | Web App: Auth: Email verification UI  | Unverified banner from emailVerified flag, resend via /auth/send-verification, /verify-email token page |
-| 93  | Web App: Docker setup                 | Dockerfile (standalone output)                                                                          |
