@@ -33,7 +33,10 @@ jobs:
 
       - run: npm test
 
+      # A production build validates its environment and fails without it (src/lib/env.ts).
       - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.example.com
 
       # Browsers are cached per Playwright version (~150MB download otherwise); the OS packages
       # they need are not part of the cache and are installed on every run.

@@ -10,7 +10,7 @@ const digitClassName = 'bg-linear-to-br from-primary via-info to-primary bg-clip
 
 /** The 404 screen: the missing path, a way out, and motion that is decoration only. */
 export const NotFoundScreen = () => {
-  const { pathname, goBack } = useNotFoundScreen();
+  const { missingPath, goBack } = useNotFoundScreen();
 
   return (
     <main className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
@@ -34,9 +34,9 @@ export const NotFoundScreen = () => {
         <div className="flex animate-rise flex-col items-center gap-2">
           <h1 className="text-2xl font-semibold text-foreground">This page went missing</h1>
           <p className="max-w-form text-sm text-muted">
-            Nothing lives at <span className="font-mono text-foreground">{pathname}</span>. The link may be out of date,
-            or the page moved somewhere else.
+            Nothing lives at this address. The link may be out of date, or the page moved somewhere else.
           </p>
+          {missingPath && <p className="font-mono text-xs text-subtle">{missingPath}</p>}
         </div>
 
         <div className="flex animate-rise-delayed flex-wrap items-center justify-center gap-3">
