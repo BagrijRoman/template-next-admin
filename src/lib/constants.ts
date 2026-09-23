@@ -9,6 +9,7 @@ export const ROUTES = {
   RESET_PASSWORD: '/reset-password',
   DASHBOARD: '/dashboard',
   USERS: '/users',
+  ACCOUNT: '/account',
   DESIGN_SYSTEM: '/design-system',
 } as const;
 

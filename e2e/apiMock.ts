@@ -10,6 +10,7 @@ export const ENDPOINTS = {
   USERS: '/users',
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD: '/auth/reset-password',
+  CHANGE_PASSWORD: '/auth/change-password',
 } as const;
 
 export const CREDENTIALS = { email: 'admin@example.com', password: 'Password123!' };
@@ -52,6 +53,7 @@ const INVALID_CREDENTIALS = errorBody(HTTP.UNAUTHORIZED, 'INVALID_CREDENTIALS', 
 const UNAUTHORIZED = errorBody(HTTP.UNAUTHORIZED, 'UNAUTHENTICATED', 'Invalid or missing access token');
 const FORBIDDEN = errorBody(HTTP.FORBIDDEN, 'FORBIDDEN', 'Insufficient role');
 const EXPIRED_RESET_TOKEN = errorBody(HTTP.BAD_REQUEST, 'INVALID_RESET_TOKEN', 'This reset link has expired');
+const WRONG_CURRENT_PASSWORD = errorBody(HTTP.BAD_REQUEST, 'WRONG_CURRENT_PASSWORD', 'Current password is incorrect');
 
 /** The only reset token this fake accepts; anything else is treated as spent or expired. */
 export const VALID_RESET_TOKEN = 'reset-ok';
@@ -166,6 +168,20 @@ export const mockApi = (target: Page | BrowserContext, options: MockOptions = {}
       return body?.token === VALID_RESET_TOKEN
         ? json(route, HTTP.NO_CONTENT)
         : json(route, HTTP.BAD_REQUEST, EXPIRED_RESET_TOKEN);
+    }
+
+    if (path === ENDPOINTS.CHANGE_PASSWORD && method === 'POST') {
+      const token = authorization?.replace(/^Bearer /, '');
+      if (!token || !validAccessTokens.has(token)) {
+        return json(route, HTTP.UNAUTHORIZED, UNAUTHORIZED);
+      }
+      if (body?.currentPassword !== CREDENTIALS.password) {
+        return json(route, HTTP.BAD_REQUEST, WRONG_CURRENT_PASSWORD);
+      }
+      // Like the real endpoint: every existing token dies and a replacement pair comes back.
+      validAccessTokens.clear();
+      validRefreshTokens.clear();
+      return json(route, HTTP.OK, { ...issuePair(), user: currentUser() });
     }
 
     if (path === ENDPOINTS.LOGOUT && method === 'POST') {

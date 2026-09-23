@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from './auth.api';
 import { useAuthStore } from './auth.store';
-import type { ResetPasswordPayload, SignInPayload } from './auth.types';
+import type { ChangePasswordPayload, ResetPasswordPayload, SignInPayload } from './auth.types';
 
 /**
  * Sign-in as a mutation: the store owns the session, TanStack Query owns the request lifecycle.
@@ -27,3 +27,12 @@ export const useResetPasswordMutation = () =>
     mutationFn: (payload: ResetPasswordPayload) => authApi.resetPassword(payload),
     meta: { silent: true },
   });
+
+/** The store owns the session the backend returns in exchange for the new password. */
+export const useChangePasswordMutation = () => {
+  const changePassword = useAuthStore((state) => state.changePassword);
+  return useMutation({
+    mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
+    meta: { silent: true },
+  });
+};

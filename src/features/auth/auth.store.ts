@@ -4,7 +4,7 @@ import { HTTP_STATUS } from '@/lib/constants';
 import { getQueryClient } from '@/lib/queryClient';
 import { authApi } from './auth.api';
 import { AUTH_STATUS } from './auth.constants';
-import type { AuthStatus, SignInPayload, User } from './auth.types';
+import type { AuthResponse, AuthStatus, ChangePasswordPayload, SignInPayload, User } from './auth.types';
 import { tokenStorage } from './tokenStorage';
 
 type AuthState = {
@@ -13,6 +13,10 @@ type AuthState = {
   /** Restores the session from the stored tokens; runs once per page load via AuthGuard. */
   loadSession: () => Promise<void>;
   signIn: (payload: SignInPayload) => Promise<void>;
+  /** Changes the password and adopts the session the backend hands back in exchange. */
+  changePassword: (payload: ChangePasswordPayload) => Promise<void>;
+  /** Stores a token pair and its user as the current session. */
+  replaceSession: (response: AuthResponse) => void;
   signOut: () => Promise<void>;
   clearSession: () => void;
 };
@@ -47,7 +51,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (payload) => {
-    const { user, ...tokens } = await authApi.signIn(payload);
+    get().replaceSession(await authApi.signIn(payload));
+  },
+
+  // The backend revokes every session on a password change and returns a replacement pair, so the
+  // stored tokens must be swapped here — keeping the old ones would 401 on the very next request.
+  changePassword: async (payload) => {
+    get().replaceSession(await authApi.changePassword(payload));
+  },
+
+  replaceSession: ({ user, ...tokens }) => {
     tokenStorage.setTokens(tokens);
     set({ user, status: AUTH_STATUS.AUTHENTICATED });
   },

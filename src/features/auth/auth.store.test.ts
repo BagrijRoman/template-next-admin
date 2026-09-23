@@ -10,7 +10,7 @@ import { tokenStorage } from './tokenStorage';
 import { USER_ROLES } from '@/features/users/users.types';
 
 vi.mock('./auth.api', () => ({
-  authApi: { signIn: vi.fn(), logout: vi.fn(), getMe: vi.fn() },
+  authApi: { signIn: vi.fn(), logout: vi.fn(), getMe: vi.fn(), changePassword: vi.fn() },
 }));
 
 const { onUnauthorizedHandlers } = vi.hoisted(() => ({ onUnauthorizedHandlers: [] as Array<() => void> }));
@@ -41,6 +41,34 @@ describe('useAuthStore', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useAuthStore.setState({ user: null, status: AUTH_STATUS.IDLE });
+  });
+
+  describe('changePassword', () => {
+    it('adopts the replacement session the backend returns, so the next request still works', async () => {
+      tokenStorage.setTokens(tokens);
+      const rotated = { accessToken: 'access-2', refreshToken: 'refresh-2' };
+      vi.mocked(authApi.changePassword).mockResolvedValue({ ...rotated, user });
+
+      await useAuthStore.getState().changePassword({ currentPassword: 'old', newPassword: 'NewSecret123' });
+
+      // The old pair was revoked server-side the moment the password changed.
+      expect(tokenStorage.getAccessToken()).toBe(rotated.accessToken);
+      expect(tokenStorage.getRefreshToken()).toBe(rotated.refreshToken);
+      expect(useAuthStore.getState()).toMatchObject({ user, status: AUTH_STATUS.AUTHENTICATED });
+    });
+
+    it('keeps the current session when the change is refused', async () => {
+      tokenStorage.setTokens(tokens);
+      vi.mocked(authApi.changePassword).mockRejectedValue(
+        makeApiError({ status: HTTP_STATUS.UNAUTHORIZED, message: 'Current password is incorrect' }),
+      );
+
+      await expect(
+        useAuthStore.getState().changePassword({ currentPassword: 'wrong', newPassword: 'NewSecret123' }),
+      ).rejects.toThrow();
+
+      expect(tokenStorage.getAccessToken()).toBe(tokens.accessToken);
+    });
   });
 
   describe('loadSession', () => {

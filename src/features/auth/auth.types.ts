@@ -12,6 +12,11 @@ export type TokenPair = {
 
 export type AuthResponse = TokenPair & { user: User };
 
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type ResetPasswordPayload = {
   token: string;
   newPassword: string;
